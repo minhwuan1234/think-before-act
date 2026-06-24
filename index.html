@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warm-up Task</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:         #f9f9f8;
+      --text:       #111110;
+      --muted:      #888882;
+      --border:     #ddddd8;
+      --accent:     #4338ca;
+      --accent-bg:  #eef2ff;
+      --amber:      #92400e;
+      --amber-bg:   #fffbeb;
+      --amber-bd:   #fcd34d;
+      --green:      #166534;
+      --green-bg:   #f0fdf4;
+      --green-bd:   #86efac;
+      --red:        #991b1b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .hdr {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      height: 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+    }
+    .hdr-logo { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .hdr-name {
+      font-size: 11px; color: var(--muted);
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; text-decoration: underline; text-underline-offset: 3px;
+    }
+    .hdr-name:hover { color: var(--text); }
+
+    /* ── Layout ── */
+    main { max-width: 520px; margin: 0 auto; padding: 0 20px 80px; }
+
+    /* ── Phases ── */
+    .phase { display: none; }
+    .phase.active { display: block; animation: fadein .2s ease; }
+    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ── Typography ── */
+    .ph-head { padding: 40px 0 28px; }
+    .ph-head h1 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 6px; }
+    .ph-head p  { font-size: 12px; color: var(--muted); }
+
+    /* ── Form fields ── */
+    textarea, input[type="text"] {
+      width: 100%;
+      font-family: inherit; font-size: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 11px 12px;
+      resize: none; outline: none;
+      transition: border-color .15s;
+      line-height: 1.6;
+    }
+    textarea:focus, input[type="text"]:focus { border-color: var(--accent); }
+    textarea:disabled { background: #f4f4f3; color: var(--muted); cursor: not-allowed; }
+
+    /* ── Buttons ── */
+    .btn {
+      font-family: inherit; font-size: 12px;
+      cursor: pointer; border: 1px solid; transition: opacity .15s;
+      padding: 11px 16px; display: inline-block; text-align: center;
+    }
+    .btn-full { display: block; width: 100%; }
+    .btn-dark  { background: var(--text);    color: var(--bg);     border-color: var(--text); }
+    .btn-dark:hover  { opacity: .75; }
+    .btn-ghost { background: transparent;    color: var(--text);   border-color: var(--border); font-weight: 400; }
+    .btn-ghost:hover { border-color: var(--text); }
+    .btn-copy  { background: transparent;    color: var(--muted);  border-color: var(--border); padding: 4px 10px; font-size: 11px; }
+    .btn-copy:hover  { color: var(--text); border-color: var(--text); }
+    .btn-copy.ok     { color: var(--green); border-color: var(--green-bd); }
+    .btn-dashed {
+      display: block; width: 100%;
+      border: 1px dashed var(--border); background: transparent;
+      font-family: inherit; font-size: 12px; color: var(--muted); padding: 11px;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-dashed:hover { border-color: var(--text); color: var(--text); }
+
+    /* ── Utility ── */
+    .label {
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+      display: block; margin-bottom: 8px;
+    }
+    .err { font-size: 11px; color: var(--red); margin-top: 6px; display: none; }
+    .hint-text { font-size: 12px; color: var(--muted); text-align: center; margin-top: 8px; }
+    .back-btn {
+      background: none; border: none; font-family: inherit; font-size: 11px;
+      color: var(--muted); cursor: pointer; text-decoration: underline;
+      text-underline-offset: 3px; padding: 0; margin-bottom: 16px; display: block;
+    }
+    .back-btn:hover { color: var(--text); }
+    .sec { margin-bottom: 24px; }
+
+    /* ── Brief box ── */
+    .brief-wrap { border: 1px solid var(--border); padding: 14px; margin-bottom: 20px; }
+    .brief-preview {
+      border: 1px solid #c7d2fe; background: var(--accent-bg);
+      padding: 10px 12px; margin-bottom: 20px;
+    }
+    .brief-preview-text {
+      font-size: 12px; color: var(--accent); line-height: 1.6;
+      display: -webkit-box; -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    /* ── Progress dots ── */
+    .dots-row {
+      display: flex; align-items: center; gap: 4px;
+      margin-bottom: 24px; overflow-x: auto; padding-bottom: 2px;
+    }
+    .dot {
+      width: 28px; height: 28px; border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      cursor: pointer; flex-shrink: 0; transition: all .15s;
+    }
+    .dot.state-sparse { border-color: var(--amber-bd); color: var(--amber); background: var(--amber-bg); }
+    .dot.state-good   { border-color: var(--green-bd); color: var(--green); background: var(--green-bg); }
+    .dot.state-ask    { border-color: #a5b4fc;         color: var(--accent); background: var(--accent-bg); }
+    .dot-line { flex: 1; height: 1px; background: var(--border); min-width: 8px; }
+
+    /* ── Question cards ── */
+    .q-card {
+      border-left: 2px solid var(--border);
+      padding: 14px 14px 14px 18px;
+      margin-bottom: 16px; transition: border-color .2s;
+    }
+    .q-card.state-sparse { border-left-color: var(--amber-bd); }
+    .q-card.state-good   { border-left-color: var(--green-bd); }
+    .q-card.state-ask    { border-left-color: #a5b4fc; }
+    .q-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 2px;
+    }
+    .q-num  { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: .06em; }
+    .q-ex-btn {
+      background: none; border: none; font-family: inherit; font-size: 10px;
+      color: var(--accent); cursor: pointer; text-decoration: underline;
+      text-underline-offset: 3px; padding: 0;
+    }
+    .q-label { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .q-hint  { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+    .sparse-warn {
+      display: none; margin-top: 8px;
+      border: 1px solid var(--amber-bd); background: var(--amber-bg);
+      padding: 8px 10px; font-size: 11px; color: var(--amber); line-height: 1.5;
+    }
+    .ask-label {
+      display: flex; align-items: center; gap: 8px; margin-top: 10px;
+      cursor: pointer; font-size: 11px; color: var(--muted); width: fit-content;
+    }
+    .ask-label input { accent-color: var(--accent); }
+
+    /* ── Pre-submit warn ── */
+    .pre-warn {
+      display: none; border: 1px solid var(--amber-bd); background: var(--amber-bg);
+      padding: 10px 12px; font-size: 11px; color: var(--amber);
+      line-height: 1.5; margin-bottom: 12px;
+    }
+
+    /* ── Stats ── */
+    .stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--border); margin: 16px 0;
+    }
+    .stat { padding: 12px; text-align: center; }
+    .stat + .stat { border-left: 1px solid var(--border); }
+    .stat-n { font-size: 22px; font-weight: 700; display: block; }
+    .stat-l { font-size: 10px; color: var(--muted); display: block; margin-top: 2px; }
+
+    /* ── Output ── */
+    .out-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .out-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .out-sub   { font-size: 11px; color: var(--muted); }
+    .out-box {
+      font-family: inherit; font-size: 12px; line-height: 1.8;
+      white-space: pre-wrap; color: var(--text);
+      border: 1px solid var(--border); padding: 14px; background: transparent;
+    }
+
+    /* ── Modals ── */
+    .modal-bg {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.35); z-index: 50;
+      align-items: flex-end; justify-content: center;
+    }
+    .modal-bg.open { display: flex; }
+    .modal-sheet {
+      background: var(--bg); border-top: 1px solid var(--border);
+      width: 100%; max-width: 520px;
+      padding: 20px; max-height: 70vh; overflow-y: auto;
+    }
+    .modal-head {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 16px;
+    }
+    .modal-ttl  { font-size: 13px; font-weight: 700; }
+    .modal-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .modal-close {
+      background: none; border: none; font-size: 20px;
+      cursor: pointer; color: var(--muted); line-height: 1; padding: 0;
+    }
+    .ex-item { border: 1px solid var(--border); padding: 10px 12px; margin-bottom: 8px; }
+    .ex-n    { font-size: 10px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+    .ex-t    { font-size: 12px; line-height: 1.5; }
+
+    .modal-cnt {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.35); z-index: 50;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-cnt.open { display: flex; }
+    .modal-box {
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 20px; width: 100%; max-width: 320px;
+    }
+    .modal-box h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .modal-box p  { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+  </style>
+</head>
+<body>
+
+  <header class="hdr">
+    <span class="hdr-logo">// warm-up task</span>
+    <button class="hdr-name" onclick="editName()" id="nameDisplay">set name →</button>
+  </header>
+
+  <main>
+
+    <!-- PHASE 1 -->
+    <div id="phase1" class="phase active">
+      <div class="ph-head">
+        <h1>dừng lại 5 phút.</h1>
+        <p>paste brief vừa nhận vào đây trước khi bắt tay làm.</p>
+      </div>
+
+      <div class="brief-wrap sec">
+        <span class="label">brief từ sếp</span>
+        <textarea id="briefInput" rows="5" placeholder="paste nội dung brief vào đây..." oninput="onBriefInput()"></textarea>
+        <div class="err" id="briefError">⚠ paste brief vào trước đã nhé.</div>
+      </div>
+
+      <button class="btn btn-dark btn-full" onclick="startWarmup()">bắt đầu warm-up →</button>
+    </div>
+
+    <!-- PHASE 2 -->
+    <div id="phase2" class="phase">
+      <div class="ph-head" style="padding-top:28px; padding-bottom:16px;">
+        <button class="back-btn" onclick="goBack()">← sửa brief</button>
+
+        <div class="brief-preview sec">
+          <span class="label">brief của t</span>
+          <div class="brief-preview-text" id="briefPreview"></div>
+        </div>
+
+        <div class="dots-row">
+          <div class="dot" id="dot1" onclick="scrollToQ('q1')" title="Phục vụ ai">1</div>
+          <div class="dot-line"></div>
+          <div class="dot" id="dot2" onclick="scrollToQ('q2')" title="Mục đích">2</div>
+          <div class="dot-line"></div>
+          <div class="dot" id="dot3" onclick="scrollToQ('q3')" title="Output">3</div>
+          <div class="dot-line"></div>
+          <div class="dot" id="dot4" onclick="scrollToQ('q4')" title="Deadline">4</div>
+          <div class="dot-line"></div>
+          <div class="dot" id="dot5" onclick="scrollToQ('q5')" title="Nguồn lực">5</div>
+          <div class="dot-line"></div>
+          <div class="dot" id="dot6" onclick="scrollToQ('q6')" title="Độ chi tiết">6</div>
+        </div>
+      </div>
+
+      <div id="questionCards"></div>
+
+      <div id="preSubmitWarning" class="pre-warn"></div>
+      <button class="btn btn-dark btn-full" onclick="submitWarmup()">hoàn tất warm-up</button>
+      <p class="hint-text">câu nào chưa biết → tích "cần hỏi sếp" và submit vẫn được</p>
+    </div>
+
+    <!-- PHASE 3 -->
+    <div id="phase3" class="phase">
+      <div class="ph-head">
+        <h1>xong rồi.</h1>
+        <p>copy từng phần bên dưới để dùng.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span class="stat-n" id="statFilled">0</span><span class="stat-l">câu đã điền</span></div>
+        <div class="stat"><span class="stat-n" id="statAsk">0</span><span class="stat-l">cần hỏi sếp</span></div>
+        <div class="stat"><span class="stat-n" id="statTime">0'</span><span class="stat-l">thời gian điền</span></div>
+      </div>
+
+      <div class="sec" id="sectionAsk" style="display:none">
+        <div class="out-head">
+          <div><div class="out-title">câu hỏi gửi sếp</div><div class="out-sub">copy và nhắn lên để làm rõ brief</div></div>
+          <button class="btn btn-copy" onclick="copySection('ask', this)">copy</button>
+        </div>
+        <div class="out-box" id="outputAsk"></div>
+      </div>
+
+      <div class="sec">
+        <div class="out-head">
+          <div><div class="out-title">bản hiểu task</div><div class="out-sub">cái t đã hiểu được từ brief này</div></div>
+          <button class="btn btn-copy" onclick="copySection('summary', this)">copy</button>
+        </div>
+        <div class="out-box" id="outputSummary"></div>
+      </div>
+
+      <button class="btn-dashed" onclick="newTask()">+ task mới</button>
+    </div>
+
+  </main>
+
+  <!-- Modal: Examples -->
+  <div class="modal-bg" id="exModal" onclick="closeModal(event)">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="modal-ttl" id="modalTitle">ví dụ câu trả lời tốt</div>
+          <div class="modal-sub">dùng để hiệu chuẩn — đừng copy y chang</div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Name -->
+  <div class="modal-cnt" id="nameModal" onclick="closeNameModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <h3>tên của t là gì?</h3>
+      <p>dùng để ghi vào log warm-up</p>
+      <input type="text" id="nameInput" placeholder="ví dụ: Quân" onkeydown="if(event.key==='Enter') saveName()" style="margin-bottom:12px;">
+      <button class="btn btn-dark btn-full" onclick="saveName()">lưu</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
