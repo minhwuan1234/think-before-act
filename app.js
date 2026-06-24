@@ -1,545 +1,281 @@
 // ============================================================
-//  WARM-UP TASK — app.js
-//  Lark Web App + Supabase local fallback
+//  THINK-BEFORE-ACT — app.js
+//  PHASE 1: Giao diện Admin tạo task + Lark SDK lấy user_id
+//  (Chưa gọi API tạo task — chỉ thu thập data + preview)
 // ============================================================
 
-const APP_ID        = 'cli_aab1ef7c8d785ed4'
-const SUPABASE_URL  = 'http://minhquandatabase.local:54321'
-const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+const APP_ID = 'cli_aab1ef7c8d785ed4'
+
+// ─── members.json (tạm hardcode — Phase 4 sẽ tách ra file riêng) ───
+// Cấu trúc: name → { open_id, team, base_token }
+// Phase 1 chỉ cần name + open_id để chọn assignee. team/base dùng sau.
+const MEMBERS = [
+  { name: 'Quân',       open_id: 'ou_placeholder_quan',   team: 'PRODUCT' },
+  { name: 'Chi',        open_id: 'ou_placeholder_chi',    team: 'L&D' },
+  { name: 'Giang',      open_id: 'ou_placeholder_giang',  team: 'BD' },
+  { name: 'Huyền Linh', open_id: 'ou_placeholder_hlinh',  team: 'BD' },
+  { name: 'Nga Linh',   open_id: 'ou_placeholder_nlinh',  team: 'BD' },
+  { name: 'Minh Anh',   open_id: 'ou_placeholder_manh',   team: 'ACCOUNT' },
+  { name: 'Hân',        open_id: 'ou_placeholder_han',    team: 'ACCOUNT' },
+]
 
 // ─── State ─────────────────────────────────────────────────
 
-let db        = null
-let startTime = null
-let currentBrief = ''
-
-// Lark user info — populate từ SDK, fallback về localStorage
-let userName   = ''
-let userAvatar = ''
-let larkOpenId = ''
-let isInLark   = false
-
-// ─── Data: 6 câu hỏi ───────────────────────────────────────
-
-const QUESTIONS = [
-  {
-    id: 'q1',
-    icon: '👤',
-    label: 'Phục vụ ai?',
-    hint: 'Tên cụ thể, vai trò, context của người dùng cuối',
-    sparseNote: 'Câu này hay bị bỏ qua nhất — nhưng không biết cho-ai thì mọi quyết định sau đều có thể sai hướng.',
-  },
-  {
-    id: 'q2',
-    icon: '🎯',
-    label: 'Mục đích là gì?',
-    hint: 'Vì sao cần làm — kết quả đạt được nếu làm đúng là gì',
-    sparseNote: 'Biết format/deadline mà không biết vì-sao → có thể deliver đúng hình thức nhưng sai nội dung.',
-  },
-  {
-    id: 'q3',
-    icon: '📦',
-    label: 'Output trông như thế nào?',
-    hint: 'Sản phẩm cuối sếp sẽ nhận — dạng gì, cỡ nào, kênh nào',
-    sparseNote: null,
-  },
-  {
-    id: 'q4',
-    icon: '⏰',
-    label: 'Deadline là khi nào?',
-    hint: 'Deadline cứng hay mềm — có milestone review giữa chừng không',
-    sparseNote: null,
-  },
-  {
-    id: 'q5',
-    icon: '🔧',
-    label: 'Nguồn lực có gì?',
-    hint: 'Người, ngân sách, công cụ — có gì và không có gì',
-    sparseNote: 'Hay bị bỏ qua — nhưng nếu thiếu nguồn lực thì cần báo sớm, không phải đợi tới deadline.',
-  },
-  {
-    id: 'q6',
-    icon: '📊',
-    label: 'Sếp muốn đào sâu tới đâu?',
-    hint: 'Cần draft để approve hướng, hay cần file hoàn chỉnh luôn',
-    sparseNote: null,
-  },
-]
-
-// ─── Data: Ví dụ mẫu ───────────────────────────────────────
-
-const EXAMPLES = {
-  q1: [
-    { text: 'Team sales — 5 người, đang dùng quy trình follow-up thủ công, quen Google Sheets' },
-    { text: 'Onboarding batch mới — 3 bạn fresher bắt đầu tháng tới, chưa biết gì về product' },
-    { text: 'Chị Hạnh — để present lên BOD cuối tháng, không cần detail kỹ thuật' },
-  ],
-  q2: [
-    { text: 'Giúp team sales rút thời gian soạn follow-up từ 20 phút xuống 5 phút' },
-    { text: 'Chuẩn hóa onboard để mọi người hiểu product workflow trong ngày đầu tiên' },
-    { text: 'Có data để pitch thêm ngân sách Q3 cho L&D với BOD' },
-  ],
-  q3: [
-    { text: '1 slide deck Google Slides, khoảng 10–15 slides, present được trực tiếp' },
-    { text: 'Video 3–5 phút, voiceover tiếng Việt, upload lên LMS nội bộ' },
-    { text: 'Checklist 1 trang A4 Google Docs, in ra dùng ngay trong buổi họp' },
-  ],
-  q4: [
-    { text: 'EOD thứ 6 tuần này — cần qua tay chị Hạnh review trước khi gửi' },
-    { text: 'Thứ 3 tuần sau 9h sáng — trình bày trong buổi họp all-hands' },
-    { text: 'Cuối tháng nhưng có check-in với sếp vào giữa tháng' },
-  ],
-  q5: [
-    { text: 'Chỉ mình t — không có ngân sách extra, dùng Canva free' },
-    { text: 'T + Quân cùng làm — deadline chồng nhau, cần align lịch trước' },
-    { text: 'Có budget nhỏ (~500k) cho tool hoặc asset nếu cần' },
-  ],
-  q6: [
-    { text: 'Sếp muốn xem draft structure trước — chưa cần polish, approve hướng là đủ' },
-    { text: 'Cần file hoàn chỉnh luôn vì sếp gửi thẳng cho khách, không qua review' },
-    { text: 'Phác 3–4 dòng ý tưởng để sếp approve concept trước khi bắt tay' },
-  ],
+let currentUser = {
+  open_id: '',
+  name:    '',
+  avatar:  '',
 }
+let isInLark = false
+
+let selectedAssignee  = null   // 1 người
+let selectedFollowers = []     // nhiều người
 
 // ─── Init ──────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Khởi tạo Supabase
-  try {
-    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-    console.log('[Supabase] Kết nối thành công ✓')
-  } catch (e) {
-    console.warn('[Supabase] Không kết nối được:', e.message)
-  }
-
-  renderQuestions()
-
-  // Khởi tạo Lark SDK
+  renderMembers()
   await initLark()
 })
 
-// ─── Lark SDK Init ─────────────────────────────────────────
+// ─── Lark SDK: lấy user identity ───────────────────────────
 
 async function initLark() {
   const nameEl   = document.getElementById('nameDisplay')
   const avatarEl = document.getElementById('userAvatar')
 
-  // Kiểm tra có đang chạy trong Lark client không
+  // Detect Lark client
   if (typeof window.h5sdk === 'undefined' && typeof window.tt === 'undefined') {
-    // Không phải trong Lark — fallback về localStorage
-    console.warn('[Lark] Không detect được Lark client — chạy standalone mode')
+    console.warn('[Lark] Không phải trong Lark client — standalone mode')
     isInLark = false
-    loadFallbackUser()
+    nameEl.textContent = '(ngoài Lark)'
+    nameEl.classList.remove('loading')
     return
   }
 
   isInLark = true
 
   try {
-    // Bước 1: Lấy signature từ server (cần backend) hoặc dùng jsapi_ticket
-    // Với Lark Web App chạy trong Lark client, SDK tự inject context
-    // Chỉ cần gọi tt.getUserInfo() hoặc h5sdk equivalents
-
-    // Thử Lark Open SDK (larksuite)
     if (window.h5sdk) {
       window.h5sdk.ready(() => {
         window.h5sdk.call('getUserInfo', {}, (res) => {
           if (res && res.user) {
-            userName   = res.user.name   || res.user.displayName || ''
-            userAvatar = res.user.avatar || res.user.avatarUrl   || ''
-            larkOpenId = res.user.openId || ''
+            currentUser.name    = res.user.name   || res.user.displayName || ''
+            currentUser.avatar  = res.user.avatar || res.user.avatarUrl   || ''
+            currentUser.open_id = res.user.openId || ''
             updateHeaderUser(nameEl, avatarEl)
           } else {
-            loadFallbackUser()
+            fallbackUser(nameEl)
           }
         })
       })
-
       window.h5sdk.error((err) => {
         console.warn('[Lark h5sdk] error:', err)
-        loadFallbackUser()
+        fallbackUser(nameEl)
       })
-    }
-    // Thử Lark Mini App SDK (tt)
-    else if (window.tt) {
+    } else if (window.tt) {
       window.tt.ready(() => {
         window.tt.getUserInfo({
           success(res) {
-            userName   = res.userInfo?.nickName || res.userInfo?.name || ''
-            userAvatar = res.userInfo?.avatarUrl || ''
+            currentUser.name   = res.userInfo?.nickName || res.userInfo?.name || ''
+            currentUser.avatar = res.userInfo?.avatarUrl || ''
             updateHeaderUser(nameEl, avatarEl)
           },
           fail(err) {
-            console.warn('[Lark tt] getUserInfo fail:', err)
-            loadFallbackUser()
+            console.warn('[Lark tt] fail:', err)
+            fallbackUser(nameEl)
           }
         })
       })
     }
-
   } catch (e) {
-    console.warn('[Lark] Init error:', e.message)
-    loadFallbackUser()
-  }
-}
-
-function loadFallbackUser() {
-  // Fallback: dùng localStorage như cũ
-  userName = localStorage.getItem('warmup_name') || ''
-  const nameEl = document.getElementById('nameDisplay')
-
-  if (userName) {
-    nameEl.textContent = userName
-    nameEl.classList.remove('loading')
-    nameEl.style.cursor = 'pointer'
-    nameEl.title = 'click để đổi tên'
-    nameEl.onclick = editName
-  } else {
-    nameEl.textContent = 'set name →'
-    nameEl.classList.remove('loading')
-    nameEl.style.cursor = 'pointer'
-    nameEl.onclick = editName
+    console.warn('[Lark] init error:', e.message)
+    fallbackUser(nameEl)
   }
 }
 
 function updateHeaderUser(nameEl, avatarEl) {
-  if (userName) {
-    nameEl.textContent = userName
+  if (currentUser.name) {
+    nameEl.textContent = currentUser.name
     nameEl.classList.remove('loading')
   }
-  if (userAvatar) {
-    avatarEl.src = userAvatar
+  if (currentUser.avatar) {
+    avatarEl.src = currentUser.avatar
     avatarEl.style.display = 'block'
   }
-  // Lưu vào localStorage để dùng khi offline
-  if (userName) localStorage.setItem('warmup_name', userName)
+  console.log('[Lark] User:', currentUser)
 }
 
-// ─── Name management (fallback khi không có Lark) ──────────
-
-function editName() {
-  if (isInLark) return // Trong Lark thì không cho edit thủ công
-
-  const current = localStorage.getItem('warmup_name') || ''
-  const val = prompt('Tên của t là gì?', current)
-  if (val && val.trim()) {
-    userName = val.trim()
-    localStorage.setItem('warmup_name', userName)
-    document.getElementById('nameDisplay').textContent = userName
-  }
+function fallbackUser(nameEl) {
+  nameEl.textContent = '(không lấy được tên)'
+  nameEl.classList.remove('loading')
 }
 
-// ─── Phase 1: Brief input ──────────────────────────────────
+// ─── Render member chips ───────────────────────────────────
 
-function onBriefInput() {
-  const val = document.getElementById('briefInput').value.trim()
-  if (val.length > 0) document.getElementById('briefError').style.display = 'none'
-}
+function renderMembers() {
+  const assigneeEl = document.getElementById('assigneeList')
+  const followerEl = document.getElementById('followerList')
 
-function startWarmup() {
-  // Nếu chưa có tên (không trong Lark và chưa set localStorage)
-  if (!userName) {
-    const val = prompt('Tên của t là gì? (dùng để ghi log)', '')
-    if (!val || !val.trim()) return
-    userName = val.trim()
-    localStorage.setItem('warmup_name', userName)
-    document.getElementById('nameDisplay').textContent = userName
-    document.getElementById('nameDisplay').classList.remove('loading')
-  }
+  assigneeEl.innerHTML = ''
+  followerEl.innerHTML = ''
 
-  const brief = document.getElementById('briefInput').value.trim()
-  if (!brief) {
-    const errEl = document.getElementById('briefError')
-    errEl.style.display = 'block'
-    document.getElementById('briefInput').focus()
-    return
-  }
+  MEMBERS.forEach(m => {
+    // Assignee chip (chọn 1)
+    const aChip = document.createElement('div')
+    aChip.className = 'member-chip'
+    aChip.textContent = m.name
+    aChip.onclick = () => selectAssignee(m, aChip)
+    assigneeEl.appendChild(aChip)
 
-  currentBrief = brief
-  startTime = Date.now()
-  document.getElementById('briefPreview').textContent = brief
-  showPhase('phase2')
-}
-
-function goBack() {
-  showPhase('phase1')
-}
-
-// ─── Phase 2: Question cards ───────────────────────────────
-
-function renderQuestions() {
-  const container = document.getElementById('questionCards')
-  container.innerHTML = ''
-
-  QUESTIONS.forEach((q, i) => {
-    const card = document.createElement('div')
-    card.id = `card-${q.id}`
-    card.className = 'q-card'
-
-    card.innerHTML = `
-      <div class="q-meta">
-        <span class="q-num">// câu ${i + 1}</span>
-        <button class="q-ex-btn" onclick="showExamples('${q.id}')">xem ví dụ</button>
-      </div>
-      <div class="q-label">${q.label}</div>
-      <div class="q-hint">${q.hint}</div>
-
-      <textarea
-        id="ans-${q.id}"
-        rows="3"
-        placeholder="trả lời ở đây..."
-        oninput="onAnswerInput('${q.id}')"
-      ></textarea>
-
-      <div id="sparse-${q.id}" class="sparse-warn">
-        ⚡ câu trả lời khá ngắn — task thiếu thông tin ở đây thường phải làm lại.
-        ${q.sparseNote ? `<br>${q.sparseNote}` : ''}
-      </div>
-
-      <label class="ask-label">
-        <input type="checkbox" id="ask-${q.id}" onchange="onAskBossToggle('${q.id}')">
-        <span>cần hỏi sếp câu này</span>
-      </label>
-    `
-
-    container.appendChild(card)
+    // Follower chip (chọn nhiều)
+    const fChip = document.createElement('div')
+    fChip.className = 'member-chip'
+    fChip.textContent = m.name
+    fChip.onclick = () => toggleFollower(m, fChip)
+    followerEl.appendChild(fChip)
   })
 }
 
-function onAnswerInput(qId) {
-  const val = document.getElementById(`ans-${qId}`).value.trim()
-  const isAsk = document.getElementById(`ask-${qId}`).checked
-  if (isAsk) return
+function selectAssignee(member, chipEl) {
+  // Bỏ chọn tất cả assignee chip
+  document.querySelectorAll('#assigneeList .member-chip').forEach(c => c.classList.remove('selected'))
+  // Chọn chip này
+  chipEl.classList.add('selected')
+  selectedAssignee = member
+  document.getElementById('err-assignee').classList.remove('show')
+}
 
-  const sparseEl = document.getElementById(`sparse-${qId}`)
-
-  if (val.length === 0) {
-    sparseEl.style.display = 'none'
-    setCardState(qId, '')
-  } else if (val.length < 15) {
-    sparseEl.style.display = 'block'
-    setCardState(qId, 'sparse')
+function toggleFollower(member, chipEl) {
+  const idx = selectedFollowers.findIndex(f => f.open_id === member.open_id)
+  if (idx >= 0) {
+    selectedFollowers.splice(idx, 1)
+    chipEl.classList.remove('selected')
   } else {
-    sparseEl.style.display = 'none'
-    setCardState(qId, 'good')
+    selectedFollowers.push(member)
+    chipEl.classList.add('selected')
   }
-
-  updateDots()
 }
 
-function onAskBossToggle(qId) {
-  const checked = document.getElementById(`ask-${qId}`).checked
-  const ta      = document.getElementById(`ans-${qId}`)
-  const sparseEl = document.getElementById(`sparse-${qId}`)
+// ─── Advanced toggle ───────────────────────────────────────
 
-  if (checked) {
-    ta.disabled = true
-    sparseEl.style.display = 'none'
-    setCardState(qId, 'ask')
-  } else {
-    ta.disabled = false
-    onAnswerInput(qId)
+function toggleAdvanced() {
+  document.getElementById('advSection').classList.toggle('open')
+}
+
+// ─── Helpers ───────────────────────────────────────────────
+
+// Convert datetime-local string → Unix timestamp milliseconds (string)
+function toTimestampMs(dateStr) {
+  if (!dateStr) return null
+  const ms = new Date(dateStr).getTime()
+  return isNaN(ms) ? null : String(ms)
+}
+
+// Convert date string (yyyy-mm-dd) → timestamp ms
+function dateToTimestampMs(dateStr) {
+  if (!dateStr) return null
+  const ms = new Date(dateStr + 'T00:00:00').getTime()
+  return isNaN(ms) ? null : String(ms)
+}
+
+// ─── Build Lark Task body ──────────────────────────────────
+
+function buildTaskBody() {
+  const summary     = document.getElementById('f-summary').value.trim()
+  const description = document.getElementById('f-description').value.trim()
+  const startVal    = document.getElementById('f-start').value
+  const dueVal      = document.getElementById('f-due').value
+  const isAllDay    = document.getElementById('f-allday').checked
+  const reminderVal = document.getElementById('f-reminder').value
+  const repeatVal   = document.getElementById('f-repeat').value
+  const tasklistVal = document.getElementById('f-tasklist').value.trim()
+
+  // members: assignee + followers
+  const members = []
+  if (selectedAssignee) {
+    members.push({ id: selectedAssignee.open_id, type: 'user', role: 'assignee' })
   }
-
-  updateDots()
-}
-
-function setCardState(qId, state) {
-  const card = document.getElementById(`card-${qId}`)
-  card.classList.remove('state-sparse', 'state-good', 'state-ask')
-  if (state) card.classList.add(`state-${state}`)
-}
-
-function updateDots() {
-  QUESTIONS.forEach((q, i) => {
-    const dot   = document.getElementById(`dot${i + 1}`)
-    const val   = document.getElementById(`ans-${q.id}`)?.value.trim() || ''
-    const isAsk = document.getElementById(`ask-${q.id}`)?.checked
-
-    dot.classList.remove('state-sparse', 'state-good', 'state-ask')
-
-    if (isAsk) {
-      dot.classList.add('state-ask')
-    } else if (val.length >= 15) {
-      dot.classList.add('state-good')
-    } else if (val.length > 0) {
-      dot.classList.add('state-sparse')
+  selectedFollowers.forEach(f => {
+    // Tránh trùng: nếu follower cũng là assignee thì bỏ
+    if (!selectedAssignee || f.open_id !== selectedAssignee.open_id) {
+      members.push({ id: f.open_id, type: 'user', role: 'follower' })
     }
   })
-}
 
-function scrollToQ(qId) {
-  document.getElementById(`card-${qId}`).scrollIntoView({ behavior: 'smooth', block: 'center' })
-}
-
-// ─── Submit ────────────────────────────────────────────────
-
-function submitWarmup() {
-  const answers = QUESTIONS.map(q => ({
-    q,
-    value:   document.getElementById(`ans-${q.id}`).value.trim(),
-    askBoss: document.getElementById(`ask-${q.id}`).checked,
-  }))
-
-  const filled  = answers.filter(a => !a.askBoss && a.value.length >= 15)
-  const sparse  = answers.filter(a => !a.askBoss && a.value.length > 0 && a.value.length < 15)
-  const askBoss = answers.filter(a => a.askBoss)
-
-  const problemCount = sparse.length + answers.filter(a => !a.askBoss && a.value.length === 0).length
-  const warnEl = document.getElementById('preSubmitWarning')
-
-  if (problemCount >= 3) {
-    warnEl.innerHTML = `⚡ <strong>${problemCount} câu</strong> chưa điền đủ. Submit vẫn được nhưng cân nhắc thêm vào hoặc tích "Cần hỏi sếp".`
-    warnEl.style.display = 'block'
-  } else {
-    warnEl.style.display = 'none'
+  // Body theo schema Lark Task v2 create
+  const body = {
+    summary,
+    description,
+    members,
   }
 
-  const elapsed = startTime ? Math.round((Date.now() - startTime) / 60000) : 0
-
-  buildOutput(answers, filled, askBoss, elapsed)
-  saveToSupabase({ brief: currentBrief, answers, userName, elapsed, larkOpenId })
-
-  showPhase('phase3')
-}
-
-function buildOutput(answers, filled, askBoss, elapsed) {
-  document.getElementById('statFilled').textContent = filled.length
-  document.getElementById('statAsk').textContent    = askBoss.length
-  document.getElementById('statTime').textContent   = elapsed + "'"
-
-  // Câu hỏi gửi sếp
-  const needClarify = answers.filter(a => a.askBoss || (!a.askBoss && a.value.length === 0))
-  if (needClarify.length > 0) {
-    document.getElementById('sectionAsk').style.display = 'block'
-    const snippet = currentBrief.length > 80 ? currentBrief.substring(0, 80) + '...' : currentBrief
-    let askText = `Chị/Anh ơi, về task:\n"${snippet}"\n\nEm cần làm rõ thêm trước khi bắt tay:\n\n`
-    needClarify.forEach((a, i) => {
-      askText += `${i + 1}. ${a.q.label.replace('?', '')} — ${a.q.hint}?\n`
-    })
-    askText += `\nCảm ơn chị/anh!`
-    document.getElementById('outputAsk').textContent = askText
-  } else {
-    document.getElementById('sectionAsk').style.display = 'none'
+  // due
+  if (dueVal) {
+    body.due = {
+      timestamp:  toTimestampMs(dueVal),
+      is_all_day: isAllDay,
+    }
   }
 
-  // Bản hiểu task
-  const date = new Date().toLocaleDateString('vi-VN')
-  let summaryText = `TASK BRIEF — ${date}\n${'─'.repeat(36)}\n\n`
-
-  if (filled.length > 0) {
-    filled.forEach(a => {
-      summaryText += `${a.q.icon}  ${a.q.label.toUpperCase()}\n${a.value}\n\n`
-    })
-  } else {
-    summaryText += `(Chưa điền được câu nào — cần hỏi sếp trước.)\n\n`
+  // start
+  if (startVal) {
+    body.start = { timestamp: dateToTimestampMs(startVal), is_all_day: true }
   }
 
-  const pending = answers.filter(a => a.askBoss || (!a.askBoss && a.value.length === 0))
-  if (pending.length > 0) {
-    summaryText += `${'─'.repeat(36)}\n⏳ CHỜ LÀM RÕ: ${pending.map(a => a.q.label).join(' · ')}`
+  // reminders
+  if (reminderVal && Number(reminderVal) >= 0) {
+    body.reminders = [{ relative_fire_minute: Number(reminderVal) }]
   }
 
-  document.getElementById('outputSummary').textContent = summaryText
+  // repeat
+  if (repeatVal) body.repeat_rule = repeatVal
+
+  // tasklist
+  if (tasklistVal) body.tasklists = [{ tasklist_guid: tasklistVal }]
+
+  return body
 }
 
-// ─── Copy ──────────────────────────────────────────────────
+// ─── Validate ──────────────────────────────────────────────
 
-function copySection(type, btn) {
-  const el = document.getElementById(type === 'ask' ? 'outputAsk' : 'outputSummary')
-  navigator.clipboard.writeText(el.textContent).then(() => {
-    const orig = btn.textContent
-    btn.textContent = 'copied ✓'
-    btn.classList.add('ok')
-    setTimeout(() => {
-      btn.textContent = orig
-      btn.classList.remove('ok')
-    }, 1500)
-  }).catch(() => {
-    const range = document.createRange()
-    range.selectNode(el)
-    window.getSelection().removeAllRanges()
-    window.getSelection().addRange(range)
-  })
+function validate() {
+  let ok = true
+
+  const summary = document.getElementById('f-summary').value.trim()
+  const desc    = document.getElementById('f-description').value.trim()
+
+  document.getElementById('err-summary').classList.toggle('show', !summary)
+  document.getElementById('err-description').classList.toggle('show', !desc)
+  document.getElementById('err-assignee').classList.toggle('show', !selectedAssignee)
+
+  if (!summary || !desc || !selectedAssignee) ok = false
+  return ok
 }
 
-// ─── New task ──────────────────────────────────────────────
+// ─── Submit (Phase 1: chỉ preview data, chưa gọi API) ──────
 
-function newTask() {
-  currentBrief = ''
-  startTime    = null
-  document.getElementById('briefInput').value     = ''
-  document.getElementById('briefPreview').textContent = ''
-  document.getElementById('preSubmitWarning').style.display = 'none'
-
-  QUESTIONS.forEach(q => {
-    const ta = document.getElementById(`ans-${q.id}`)
-    if (ta) { ta.value = ''; ta.disabled = false }
-    const cb = document.getElementById(`ask-${q.id}`)
-    if (cb) cb.checked = false
-    const sp = document.getElementById(`sparse-${q.id}`)
-    if (sp) sp.style.display = 'none'
-    setCardState(q.id, '')
-  })
-
-  updateDots()
-  showPhase('phase1')
-}
-
-// ─── Phase switching ───────────────────────────────────────
-
-function showPhase(id) {
-  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'))
-  document.getElementById(id).classList.add('active')
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-// ─── Examples modal ────────────────────────────────────────
-
-function showExamples(qId) {
-  const q        = QUESTIONS.find(q => q.id === qId)
-  const examples = EXAMPLES[qId] || []
-
-  document.getElementById('modalTitle').textContent = `ví dụ: ${q.label}`
-  document.getElementById('modalBody').innerHTML = examples.map((ex, i) => `
-    <div class="ex-item">
-      <div class="ex-n">mẫu ${i + 1}</div>
-      <div class="ex-t">${ex.text}</div>
-    </div>
-  `).join('')
-
-  document.getElementById('exModal').classList.add('open')
-}
-
-function closeModal(e) {
-  if (!e || e.target === document.getElementById('exModal')) {
-    document.getElementById('exModal').classList.remove('open')
-  }
-}
-
-// ─── Supabase ──────────────────────────────────────────────
-
-async function saveToSupabase(data) {
-  if (!db) {
-    console.warn('[Supabase] Chưa kết nối — bỏ qua')
+function submitTask() {
+  if (!validate()) {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     return
   }
 
-  const row = {
-    user_name:    data.userName || 'Unknown',
-    lark_open_id: data.larkOpenId || null,
-    brief:        data.brief,
-    elapsed:      data.elapsed,
-    q1_answer:    data.answers[0].value,  q1_ask_boss: data.answers[0].askBoss,
-    q2_answer:    data.answers[1].value,  q2_ask_boss: data.answers[1].askBoss,
-    q3_answer:    data.answers[2].value,  q3_ask_boss: data.answers[2].askBoss,
-    q4_answer:    data.answers[3].value,  q4_ask_boss: data.answers[3].askBoss,
-    q5_answer:    data.answers[4].value,  q5_ask_boss: data.answers[4].askBoss,
-    q6_answer:    data.answers[5].value,  q6_ask_boss: data.answers[5].askBoss,
+  const body = buildTaskBody()
+
+  // Phase 1: hiển thị data ra debug panel để kiểm tra
+  const preview = {
+    _created_by: {
+      name:    currentUser.name    || '(chưa lấy được)',
+      open_id: currentUser.open_id || '(chưa lấy được)',
+    },
+    _assignee_team: selectedAssignee ? selectedAssignee.team : null,
+    lark_task_body: body,
   }
 
-  const { error } = await db.from('submissions').insert(row)
+  document.getElementById('debugPanel').style.display = 'block'
+  document.getElementById('debugOutput').textContent = JSON.stringify(preview, null, 2)
+  document.getElementById('debugPanel').scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-  if (error) console.error('[Supabase] Lỗi khi lưu:', error.message)
-  else        console.log('[Supabase] Lưu thành công ✓')
+  console.log('[Phase 1] Task body sẵn sàng gửi:', body)
 }
