@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Warm-up Task</title>
+  <title>think-before-act</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -43,217 +43,116 @@
       padding: 0 20px;
     }
     .hdr-logo { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-    .hdr-user {
-      display: flex; align-items: center; gap: 8px;
-    }
+    .hdr-user { display: flex; align-items: center; gap: 8px; }
     .hdr-avatar {
       width: 24px; height: 24px; border-radius: 50%;
-      border: 1px solid var(--border); object-fit: cover;
-      display: none;
+      border: 1px solid var(--border); object-fit: cover; display: none;
     }
-    .hdr-name {
-      font-size: 11px; color: var(--muted);
-      background: none; border: none; cursor: default;
-      font-family: inherit;
-    }
+    .hdr-name { font-size: 11px; color: var(--muted); }
     .hdr-name.loading { opacity: .5; }
 
     /* ── Layout ── */
-    main { max-width: 520px; margin: 0 auto; padding: 0 20px 80px; }
+    main { max-width: 560px; margin: 0 auto; padding: 0 20px 80px; }
 
-    /* ── Phases ── */
-    .phase { display: none; }
-    .phase.active { display: block; animation: fadein .2s ease; }
-    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
-
-    /* ── Typography ── */
     .ph-head { padding: 40px 0 28px; }
     .ph-head h1 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 6px; }
     .ph-head p  { font-size: 12px; color: var(--muted); }
 
-    /* ── Form fields ── */
-    textarea, input[type="text"] {
+    /* ── Form sections ── */
+    .form-sec { margin-bottom: 32px; }
+    .sec-title {
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 8px; margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .field { margin-bottom: 18px; }
+    .field-label {
+      font-size: 11px; font-weight: 700; display: block; margin-bottom: 6px;
+    }
+    .field-label .req { color: var(--red); }
+    .field-hint { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+    input[type="text"], input[type="date"], input[type="datetime-local"],
+    input[type="number"], textarea, select {
       width: 100%;
       font-family: inherit; font-size: 12px;
       background: transparent;
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 11px 12px;
-      resize: none; outline: none;
+      padding: 10px 12px;
+      outline: none; resize: none;
       transition: border-color .15s;
       line-height: 1.6;
     }
-    textarea:focus, input[type="text"]:focus { border-color: var(--accent); }
-    textarea:disabled { background: #f4f4f3; color: var(--muted); cursor: not-allowed; }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    select { cursor: pointer; }
+
+    /* ── Toggle ── */
+    .toggle-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; cursor: pointer; width: fit-content;
+    }
+    .toggle-row input { accent-color: var(--accent); width: auto; }
+
+    /* ── Members multi-select ── */
+    .member-list {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+    }
+    .member-chip {
+      font-size: 11px; padding: 5px 10px;
+      border: 1px solid var(--border); cursor: pointer;
+      transition: all .15s; user-select: none;
+    }
+    .member-chip:hover { border-color: var(--text); }
+    .member-chip.selected {
+      border-color: var(--accent); background: var(--accent-bg); color: var(--accent);
+    }
+    .member-empty { font-size: 11px; color: var(--muted); }
+
+    /* ── Advanced toggle ── */
+    .adv-toggle {
+      background: none; border: none; font-family: inherit; font-size: 11px;
+      color: var(--muted); cursor: pointer; text-decoration: underline;
+      text-underline-offset: 3px; padding: 0; margin-bottom: 16px;
+    }
+    .adv-toggle:hover { color: var(--text); }
+    .adv-section { display: none; }
+    .adv-section.open { display: block; }
 
     /* ── Buttons ── */
     .btn {
       font-family: inherit; font-size: 12px;
       cursor: pointer; border: 1px solid; transition: opacity .15s;
-      padding: 11px 16px; display: inline-block; text-align: center;
+      padding: 12px 16px; display: block; width: 100%; text-align: center;
     }
-    .btn-full { display: block; width: 100%; }
-    .btn-dark  { background: var(--text);    color: var(--bg);     border-color: var(--text); }
-    .btn-dark:hover  { opacity: .75; }
-    .btn-ghost { background: transparent;    color: var(--text);   border-color: var(--border); font-weight: 400; }
-    .btn-ghost:hover { border-color: var(--text); }
-    .btn-copy  { background: transparent;    color: var(--muted);  border-color: var(--border); padding: 4px 10px; font-size: 11px; }
-    .btn-copy:hover  { color: var(--text); border-color: var(--text); }
-    .btn-copy.ok     { color: var(--green); border-color: var(--green-bd); }
-    .btn-dashed {
-      display: block; width: 100%;
-      border: 1px dashed var(--border); background: transparent;
-      font-family: inherit; font-size: 12px; color: var(--muted); padding: 11px;
-      cursor: pointer; transition: all .15s;
-    }
-    .btn-dashed:hover { border-color: var(--text); color: var(--text); }
+    .btn-dark  { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .btn-dark:hover { opacity: .75; }
 
-    /* ── Utility ── */
-    .label {
-      font-size: 10px; font-weight: 700; letter-spacing: .08em;
-      text-transform: uppercase; color: var(--muted);
-      display: block; margin-bottom: 8px;
-    }
+    /* ── Error ── */
     .err { font-size: 11px; color: var(--red); margin-top: 6px; display: none; }
-    .hint-text { font-size: 12px; color: var(--muted); text-align: center; margin-top: 8px; }
-    .back-btn {
-      background: none; border: none; font-family: inherit; font-size: 11px;
-      color: var(--muted); cursor: pointer; text-decoration: underline;
-      text-underline-offset: 3px; padding: 0; margin-bottom: 16px; display: block;
-    }
-    .back-btn:hover { color: var(--text); }
-    .sec { margin-bottom: 24px; }
+    .err.show { display: block; }
 
-    /* ── Brief box ── */
-    .brief-wrap { border: 1px solid var(--border); padding: 14px; margin-bottom: 20px; }
-    .brief-preview {
-      border: 1px solid #c7d2fe; background: var(--accent-bg);
-      padding: 10px 12px; margin-bottom: 20px;
+    /* ── Debug panel (Phase 1 only) ── */
+    .debug {
+      margin-top: 28px; border: 1px dashed var(--amber-bd);
+      background: var(--amber-bg); padding: 14px;
     }
-    .brief-preview-text {
-      font-size: 12px; color: var(--accent); line-height: 1.6;
-      display: -webkit-box; -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical; overflow: hidden;
+    .debug-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--amber); margin-bottom: 8px;
     }
-
-    /* ── Progress dots ── */
-    .dots-row {
-      display: flex; align-items: center; gap: 4px;
-      margin-bottom: 24px; overflow-x: auto; padding-bottom: 2px;
+    .debug pre {
+      font-family: inherit; font-size: 11px; color: var(--text);
+      white-space: pre-wrap; word-break: break-all; line-height: 1.6;
     }
-    .dot {
-      width: 28px; height: 28px; border: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 700; color: var(--muted);
-      cursor: pointer; flex-shrink: 0; transition: all .15s;
-    }
-    .dot.state-sparse { border-color: var(--amber-bd); color: var(--amber); background: var(--amber-bg); }
-    .dot.state-good   { border-color: var(--green-bd); color: var(--green); background: var(--green-bg); }
-    .dot.state-ask    { border-color: #a5b4fc;         color: var(--accent); background: var(--accent-bg); }
-    .dot-line { flex: 1; height: 1px; background: var(--border); min-width: 8px; }
-
-    /* ── Question cards ── */
-    .q-card {
-      border-left: 2px solid var(--border);
-      padding: 14px 14px 14px 18px;
-      margin-bottom: 16px; transition: border-color .2s;
-    }
-    .q-card.state-sparse { border-left-color: var(--amber-bd); }
-    .q-card.state-good   { border-left-color: var(--green-bd); }
-    .q-card.state-ask    { border-left-color: #a5b4fc; }
-    .q-meta {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 2px;
-    }
-    .q-num  { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: .06em; }
-    .q-ex-btn {
-      background: none; border: none; font-family: inherit; font-size: 10px;
-      color: var(--accent); cursor: pointer; text-decoration: underline;
-      text-underline-offset: 3px; padding: 0;
-    }
-    .q-label { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
-    .q-hint  { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
-    .sparse-warn {
-      display: none; margin-top: 8px;
-      border: 1px solid var(--amber-bd); background: var(--amber-bg);
-      padding: 8px 10px; font-size: 11px; color: var(--amber); line-height: 1.5;
-    }
-    .ask-label {
-      display: flex; align-items: center; gap: 8px; margin-top: 10px;
-      cursor: pointer; font-size: 11px; color: var(--muted); width: fit-content;
-    }
-    .ask-label input { accent-color: var(--accent); }
-
-    /* ── Pre-submit warn ── */
-    .pre-warn {
-      display: none; border: 1px solid var(--amber-bd); background: var(--amber-bg);
-      padding: 10px 12px; font-size: 11px; color: var(--amber);
-      line-height: 1.5; margin-bottom: 12px;
-    }
-
-    /* ── Stats ── */
-    .stats {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      border: 1px solid var(--border); margin: 16px 0;
-    }
-    .stat { padding: 12px; text-align: center; }
-    .stat + .stat { border-left: 1px solid var(--border); }
-    .stat-n { font-size: 22px; font-weight: 700; display: block; }
-    .stat-l { font-size: 10px; color: var(--muted); display: block; margin-top: 2px; }
-
-    /* ── Output ── */
-    .out-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-    .out-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-    .out-sub   { font-size: 11px; color: var(--muted); }
-    .out-box {
-      font-family: inherit; font-size: 12px; line-height: 1.8;
-      white-space: pre-wrap; color: var(--text);
-      border: 1px solid var(--border); padding: 14px; background: transparent;
-    }
-
-    /* ── Lark auth loading ── */
-    .auth-loading {
-      display: flex; align-items: center; justify-content: center;
-      min-height: 200px; flex-direction: column; gap: 12px;
-    }
-    .auth-loading p { font-size: 12px; color: var(--muted); }
-    .auth-err {
-      border: 1px solid var(--amber-bd); background: var(--amber-bg);
-      padding: 12px; font-size: 12px; color: var(--amber);
-      margin: 20px 0; line-height: 1.6;
-    }
-
-    /* ── Modals ── */
-    .modal-bg {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.35); z-index: 50;
-      align-items: flex-end; justify-content: center;
-    }
-    .modal-bg.open { display: flex; }
-    .modal-sheet {
-      background: var(--bg); border-top: 1px solid var(--border);
-      width: 100%; max-width: 520px;
-      padding: 20px; max-height: 70vh; overflow-y: auto;
-    }
-    .modal-head {
-      display: flex; justify-content: space-between;
-      align-items: flex-start; margin-bottom: 16px;
-    }
-    .modal-ttl  { font-size: 13px; font-weight: 700; }
-    .modal-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .modal-close {
-      background: none; border: none; font-size: 20px;
-      cursor: pointer; color: var(--muted); line-height: 1; padding: 0;
-    }
-    .ex-item { border: 1px solid var(--border); padding: 10px 12px; margin-bottom: 8px; }
-    .ex-n    { font-size: 10px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
-    .ex-t    { font-size: 12px; line-height: 1.5; }
   </style>
 </head>
 <body>
 
   <header class="hdr">
-    <span class="hdr-logo">// warm-up task</span>
+    <span class="hdr-logo">// think-before-act</span>
     <div class="hdr-user">
       <img class="hdr-avatar" id="userAvatar" alt="avatar">
       <span class="hdr-name loading" id="nameDisplay">đang tải...</span>
@@ -261,107 +160,98 @@
   </header>
 
   <main>
-
-    <!-- PHASE 1 -->
-    <div id="phase1" class="phase active">
-      <div class="ph-head">
-        <h1>dừng lại 5 phút.</h1>
-        <p>paste brief vừa nhận vào đây trước khi bắt tay làm.</p>
-      </div>
-
-      <div class="brief-wrap sec">
-        <span class="label">brief từ sếp</span>
-        <textarea id="briefInput" rows="5" placeholder="paste nội dung brief vào đây..." oninput="onBriefInput()"></textarea>
-        <div class="err" id="briefError">⚠ paste brief vào trước đã nhé.</div>
-      </div>
-
-      <button class="btn btn-dark btn-full" onclick="startWarmup()">bắt đầu warm-up →</button>
+    <div class="ph-head">
+      <h1>giao task mới.</h1>
+      <p>điền brief rõ ràng — người nhận sẽ phân tích 6 góc độ trước khi làm.</p>
     </div>
 
-    <!-- PHASE 2 -->
-    <div id="phase2" class="phase">
-      <div class="ph-head" style="padding-top:28px; padding-bottom:16px;">
-        <button class="back-btn" onclick="goBack()">← sửa brief</button>
+    <!-- ─── THÔNG TIN CƠ BẢN ─── -->
+    <div class="form-sec">
+      <div class="sec-title">thông tin cơ bản</div>
 
-        <div class="brief-preview sec">
-          <span class="label">brief của t</span>
-          <div class="brief-preview-text" id="briefPreview"></div>
-        </div>
-
-        <div class="dots-row">
-          <div class="dot" id="dot1" onclick="scrollToQ('q1')" title="Phục vụ ai">1</div>
-          <div class="dot-line"></div>
-          <div class="dot" id="dot2" onclick="scrollToQ('q2')" title="Mục đích">2</div>
-          <div class="dot-line"></div>
-          <div class="dot" id="dot3" onclick="scrollToQ('q3')" title="Output">3</div>
-          <div class="dot-line"></div>
-          <div class="dot" id="dot4" onclick="scrollToQ('q4')" title="Deadline">4</div>
-          <div class="dot-line"></div>
-          <div class="dot" id="dot5" onclick="scrollToQ('q5')" title="Nguồn lực">5</div>
-          <div class="dot-line"></div>
-          <div class="dot" id="dot6" onclick="scrollToQ('q6')" title="Độ chi tiết">6</div>
-        </div>
+      <div class="field">
+        <label class="field-label">tên task <span class="req">*</span></label>
+        <input type="text" id="f-summary" placeholder="vd: làm video onboarding cho fresher">
+        <div class="err" id="err-summary">⚠ cần điền tên task</div>
       </div>
 
-      <div id="questionCards"></div>
+      <div class="field">
+        <label class="field-label">brief / mô tả <span class="req">*</span></label>
+        <textarea id="f-description" rows="5" placeholder="mô tả task càng rõ càng tốt — bối cảnh, yêu cầu, kỳ vọng..."></textarea>
+        <div class="err" id="err-description">⚠ cần điền brief</div>
+      </div>
 
-      <div id="preSubmitWarning" class="pre-warn"></div>
-      <button class="btn btn-dark btn-full" onclick="submitWarmup()">hoàn tất warm-up</button>
-      <p class="hint-text">câu nào chưa biết → tích "cần hỏi sếp" và submit vẫn được</p>
+      <div class="field">
+        <label class="field-label">người nhận task <span class="req">*</span></label>
+        <div class="member-list" id="assigneeList"><span class="member-empty">đang tải danh sách...</span></div>
+        <div class="field-hint">chọn 1 người sẽ làm task này</div>
+        <div class="err" id="err-assignee">⚠ chọn người nhận task</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">người theo dõi</label>
+        <div class="member-list" id="followerList"><span class="member-empty">đang tải danh sách...</span></div>
+        <div class="field-hint">(tuỳ chọn) người muốn theo dõi tiến độ — vd quản lý</div>
+      </div>
     </div>
 
-    <!-- PHASE 3 -->
-    <div id="phase3" class="phase">
-      <div class="ph-head">
-        <h1>xong rồi.</h1>
-        <p>copy từng phần bên dưới để dùng.</p>
+    <!-- ─── THỜI GIAN ─── -->
+    <div class="form-sec">
+      <div class="sec-title">thời gian</div>
+
+      <div class="field">
+        <label class="field-label">ngày bắt đầu</label>
+        <input type="date" id="f-start">
       </div>
 
-      <div class="stats">
-        <div class="stat"><span class="stat-n" id="statFilled">0</span><span class="stat-l">câu đã điền</span></div>
-        <div class="stat"><span class="stat-n" id="statAsk">0</span><span class="stat-l">cần hỏi sếp</span></div>
-        <div class="stat"><span class="stat-n" id="statTime">0'</span><span class="stat-l">thời gian điền</span></div>
+      <div class="field">
+        <label class="field-label">deadline</label>
+        <input type="datetime-local" id="f-due">
+        <label class="toggle-row" style="margin-top:10px;">
+          <input type="checkbox" id="f-allday">
+          <span>cả ngày (không cần giờ cụ thể)</span>
+        </label>
       </div>
 
-      <div class="sec" id="sectionAsk" style="display:none">
-        <div class="out-head">
-          <div><div class="out-title">câu hỏi gửi sếp</div><div class="out-sub">copy và nhắn lên để làm rõ brief</div></div>
-          <button class="btn btn-copy" id="btnCopyAsk" onclick="copySection('ask', this)">copy</button>
-        </div>
-        <div class="out-box" id="outputAsk"></div>
+      <div class="field">
+        <label class="field-label">nhắc trước (phút)</label>
+        <input type="number" id="f-reminder" placeholder="vd: 30" min="0">
+        <div class="field-hint">để trống nếu không cần nhắc</div>
       </div>
-
-      <div class="sec">
-        <div class="out-head">
-          <div><div class="out-title">bản hiểu task</div><div class="out-sub">cái t đã hiểu được từ brief này</div></div>
-          <button class="btn btn-copy" id="btnCopySummary" onclick="copySection('summary', this)">copy</button>
-        </div>
-        <div class="out-box" id="outputSummary"></div>
-      </div>
-
-      <button class="btn-dashed" onclick="newTask()">+ task mới</button>
     </div>
 
+    <!-- ─── NÂNG CAO ─── -->
+    <button class="adv-toggle" onclick="toggleAdvanced()">+ tuỳ chọn nâng cao</button>
+    <div class="adv-section" id="advSection">
+      <div class="form-sec">
+        <div class="field">
+          <label class="field-label">lặp lại</label>
+          <select id="f-repeat">
+            <option value="">không lặp</option>
+            <option value="FREQ=DAILY">hàng ngày</option>
+            <option value="FREQ=WEEKLY">hàng tuần</option>
+            <option value="FREQ=MONTHLY">hàng tháng</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label">tasklist GUID</label>
+          <input type="text" id="f-tasklist" placeholder="(tuỳ chọn) gắn task vào tasklist nào">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-dark" onclick="submitTask()">tạo task →</button>
+
+    <!-- Debug panel: Phase 1 chỉ để xem data thu được -->
+    <div class="debug" id="debugPanel" style="display:none;">
+      <div class="debug-title">// data sẽ gửi tới lark api (phase 1 — preview)</div>
+      <pre id="debugOutput"></pre>
+    </div>
   </main>
-
-  <!-- Modal: Examples -->
-  <div class="modal-bg" id="exModal" onclick="closeModal(event)">
-    <div class="modal-sheet" onclick="event.stopPropagation()">
-      <div class="modal-head">
-        <div>
-          <div class="modal-ttl" id="modalTitle">ví dụ câu trả lời tốt</div>
-          <div class="modal-sub">dùng để hiệu chuẩn — đừng copy y chang</div>
-        </div>
-        <button class="modal-close" onclick="closeModal()">×</button>
-      </div>
-      <div id="modalBody"></div>
-    </div>
-  </div>
 
   <!-- Lark JS SDK -->
   <script src="https://lf-lark-suite-open-cdn.feishu.cn/obj/feishu-static/lark/web-app-sdk/jssdk-1.5.13.js"></script>
-  <!-- Supabase (giữ lại phòng fallback) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>
