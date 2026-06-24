@@ -43,12 +43,20 @@
       padding: 0 20px;
     }
     .hdr-logo { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .hdr-user {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .hdr-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 1px solid var(--border); object-fit: cover;
+      display: none;
+    }
     .hdr-name {
       font-size: 11px; color: var(--muted);
-      background: none; border: none; cursor: pointer;
-      font-family: inherit; text-decoration: underline; text-underline-offset: 3px;
+      background: none; border: none; cursor: default;
+      font-family: inherit;
     }
-    .hdr-name:hover { color: var(--text); }
+    .hdr-name.loading { opacity: .5; }
 
     /* ── Layout ── */
     main { max-width: 520px; margin: 0 auto; padding: 0 20px 80px; }
@@ -203,6 +211,18 @@
       border: 1px solid var(--border); padding: 14px; background: transparent;
     }
 
+    /* ── Lark auth loading ── */
+    .auth-loading {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 200px; flex-direction: column; gap: 12px;
+    }
+    .auth-loading p { font-size: 12px; color: var(--muted); }
+    .auth-err {
+      border: 1px solid var(--amber-bd); background: var(--amber-bg);
+      padding: 12px; font-size: 12px; color: var(--amber);
+      margin: 20px 0; line-height: 1.6;
+    }
+
     /* ── Modals ── */
     .modal-bg {
       display: none; position: fixed; inset: 0;
@@ -228,26 +248,16 @@
     .ex-item { border: 1px solid var(--border); padding: 10px 12px; margin-bottom: 8px; }
     .ex-n    { font-size: 10px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
     .ex-t    { font-size: 12px; line-height: 1.5; }
-
-    .modal-cnt {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.35); z-index: 50;
-      align-items: center; justify-content: center; padding: 20px;
-    }
-    .modal-cnt.open { display: flex; }
-    .modal-box {
-      background: var(--bg); border: 1px solid var(--border);
-      padding: 20px; width: 100%; max-width: 320px;
-    }
-    .modal-box h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-    .modal-box p  { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
   </style>
 </head>
 <body>
 
   <header class="hdr">
     <span class="hdr-logo">// warm-up task</span>
-    <button class="hdr-name" onclick="editName()" id="nameDisplay">set name →</button>
+    <div class="hdr-user">
+      <img class="hdr-avatar" id="userAvatar" alt="avatar">
+      <span class="hdr-name loading" id="nameDisplay">đang tải...</span>
+    </div>
   </header>
 
   <main>
@@ -316,7 +326,7 @@
       <div class="sec" id="sectionAsk" style="display:none">
         <div class="out-head">
           <div><div class="out-title">câu hỏi gửi sếp</div><div class="out-sub">copy và nhắn lên để làm rõ brief</div></div>
-          <button class="btn btn-copy" onclick="copySection('ask', this)">copy</button>
+          <button class="btn btn-copy" id="btnCopyAsk" onclick="copySection('ask', this)">copy</button>
         </div>
         <div class="out-box" id="outputAsk"></div>
       </div>
@@ -324,7 +334,7 @@
       <div class="sec">
         <div class="out-head">
           <div><div class="out-title">bản hiểu task</div><div class="out-sub">cái t đã hiểu được từ brief này</div></div>
-          <button class="btn btn-copy" onclick="copySection('summary', this)">copy</button>
+          <button class="btn btn-copy" id="btnCopySummary" onclick="copySection('summary', this)">copy</button>
         </div>
         <div class="out-box" id="outputSummary"></div>
       </div>
@@ -348,16 +358,9 @@
     </div>
   </div>
 
-  <!-- Modal: Name -->
-  <div class="modal-cnt" id="nameModal" onclick="closeNameModal(event)">
-    <div class="modal-box" onclick="event.stopPropagation()">
-      <h3>tên của t là gì?</h3>
-      <p>dùng để ghi vào log warm-up</p>
-      <input type="text" id="nameInput" placeholder="ví dụ: Quân" onkeydown="if(event.key==='Enter') saveName()" style="margin-bottom:12px;">
-      <button class="btn btn-dark btn-full" onclick="saveName()">lưu</button>
-    </div>
-  </div>
-
+  <!-- Lark JS SDK -->
+  <script src="https://lf-lark-suite-open-cdn.feishu.cn/obj/feishu-static/lark/web-app-sdk/jssdk-1.5.13.js"></script>
+  <!-- Supabase (giữ lại phòng fallback) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
