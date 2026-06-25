@@ -198,23 +198,75 @@ function setTeam(team) {
 
 // ─── Dashboard render ───────────────────────────────────────
 
-function renderDashboard(team) {
-  const tasks   = MOCK_TASKS.filter(t => t.team === team)
-  const total   = tasks.length
-  const done    = tasks.filter(t => t.status === 'done').length
-  const pending = tasks.filter(t => t.status !== 'done').length
-
-  document.getElementById('stat-total').textContent   = total
-  document.getElementById('stat-done').textContent    = done
-  document.getElementById('stat-pending').textContent = pending
-
+async function renderDashboard(team) {
   const listEl = document.getElementById('taskList')
-  if (tasks.length === 0) {
-    listEl.innerHTML = `<div class="empty-state"><p>chưa có task nào cho team ${team}.</p></div>`
-    return
+  listEl.innerHTML = '<div class="empty-state"><p>đang tải...</p></div>'
+
+  // Reset stats
+  document.getElementById('stat-total').textContent   = '—'
+  document.getElementById('stat-done').textContent    = '—'
+  document.getElementById('stat-pending').textContent = '—'
+
+  try {
+    const res  = await fetch(`${WORKER_URL}/base-tasks?team=${team}`)
+    const data = await res.json()
+
+    const tasks    = data.tasks    || []
+    const subtasks = data.subtasks || []
+
+    if (tasks.length === 0) {
+      listEl.innerHTML = `<div class="empty-state"><p>chưa có task nào cho team ${team}.</p></div>`
+      document.getElementById('stat-total').textContent   = 0
+      document.getElementById('stat-done').textContent    = 0
+      document.getElementById('stat-pending').textContent = 0
+      return
+    }
+
+    // Map subtasks theo task_guid
+    const subMap = {}
+    subtasks.forEach(s => {
+      const f       = s.fields
+      const tguid   = f['task_guid'] || ''
+      if (!subMap[tguid]) subMap[tguid] = []
+      subMap[tguid].push({
+        angle:      f['question']   || '',
+        done:       f['completed']  || false,
+        checked_at: f['checked_at'] || null,
+      })
+    })
+
+    // Build task objects
+    const taskList = tasks.map(t => {
+      const f = t.fields
+      return {
+        guid:        f['task_guid']       || t.record_id,
+        summary:     f['summary']         || '',
+        description: f['description']     || '',
+        assignee:    f['assignee_name']   || '',
+        created_by:  f['created_by']      || '',
+        created_at:  f['created_at']      || '',
+        deadline:    f['deadline']        || '',
+        status:      f['status']          || 'pending',
+        team,
+        subtasks:    subMap[f['task_guid']] || [],
+        claude_suggestion: null,
+      }
+    })
+
+    // Stats
+    const total   = taskList.length
+    const done    = taskList.filter(t => t.status === 'done').length
+    const pending = taskList.filter(t => t.status !== 'done').length
+    document.getElementById('stat-total').textContent   = total
+    document.getElementById('stat-done').textContent    = done
+    document.getElementById('stat-pending').textContent = pending
+
+    listEl.innerHTML = ''
+    taskList.forEach(task => listEl.appendChild(buildTaskCard(task)))
+
+  } catch (err) {
+    listEl.innerHTML = `<div class="empty-state"><p>lỗi tải data: ${err.message}</p></div>`
   }
-  listEl.innerHTML = ''
-  tasks.forEach(task => listEl.appendChild(buildTaskCard(task)))
 }
 
 function buildTaskCard(task) {
@@ -394,7 +446,7 @@ function formatDateShort(isoStr) {
 function setSubmitState(loading, step) {
   isSubmitting = loading
   const btn = document.getElementById('btnSubmit')
-  const txt = step === 'subtask' ? 'đang tạo subtask...' : step === 'suggestion' ? 'đang tạo gợi ý...' : loading ? 'đang tạo task...' : 'tạo task →'
+  const txt = step === 'subtask' ? 'đang tạo subtask...' : step === 'base' ? 'đang ghi vào base...' : step === 'suggestion' ? 'đang tạo gợi ý...' : loading ? 'đang tạo task...' : 'tạo task →'
   btn.textContent   = txt
   btn.disabled      = loading
   btn.style.opacity = loading ? '.6' : '1'
@@ -504,23 +556,50 @@ async function submitTask() {
       ? subData.results.filter(r => !r.data || !r.data.task).length
       : 1
 
-    // Bước 3: generate suggestion + post comment
+    // Bước 3: ghi vào Lark Base
+    setSubmitState(true, 'base')
+    const subtaskList = (subData.results || [])
+      .filter(r => r.data?.task?.guid)
+      .map((r, i) => ({
+        subtask_guid: r.data.task.guid,
+        question:     WARMUP_QUESTIONS[i],
+      }))
+
+    try {
+      await fetch(`${WORKER_URL}/write-to-base`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          team:          selectedAssignee.team,
+          task_guid:     taskGuid,
+          summary:       body.summary,
+          description:   body.description,
+          assignee_name: selectedAssignee.name,
+          created_by:    currentUser.name || '(unknown)',
+          deadline:      body.due ? new Date(Number(body.due.timestamp)).toISOString() : '',
+          subtasks:      subtaskList,
+        }),
+      })
+    } catch (e) {
+      console.warn('[Phase 6] write-to-base lỗi:', e.message)
+    }
+
+    // Bước 4: generate suggestion + post comment
     setSubmitState(true, 'suggestion')
     try {
       await fetch(`${WORKER_URL}/generate-suggestion`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          task_guid:          taskGuid,
-          summary:            body.summary,
-          description:        body.description,
-          assignee_open_id:   selectedAssignee.open_id,
-          assignee_team:      selectedAssignee.team,
+          task_guid:        taskGuid,
+          summary:          body.summary,
+          description:      body.description,
+          assignee_open_id: selectedAssignee.open_id,
+          assignee_team:    selectedAssignee.team,
         }),
       })
     } catch (e) {
       console.warn('[Phase 5] generate-suggestion lỗi:', e.message)
-      // Không block — task + subtask đã tạo xong
     }
 
     showResult('success', taskGuid, null, subFailed)
@@ -558,6 +637,7 @@ function showResult(type, taskGuid, errMsg, subFailed) {
         junior sẽ nhận được notification trong Lark.
       </div>
       <button class="btn btn-ghost" style="margin-top:12px;width:auto;padding:8px 14px" onclick="resetForm();toggleCreateForm()">tạo task khác</button>
+      <button class="btn btn-ghost" style="margin-top:12px;width:auto;padding:8px 14px;margin-left:8px" onclick="renderDashboard(currentTeam)">↻ refresh dashboard</button>
     `
   } else {
     panel.className = 'result-panel error'
