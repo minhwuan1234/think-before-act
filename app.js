@@ -10,13 +10,8 @@ const APP_ID = 'cli_aab1ef7c8d785ed4'
 // Cấu trúc: name → { open_id, team, base_token }
 // Phase 1 chỉ cần name + open_id để chọn assignee. team/base dùng sau.
 const MEMBERS = [
-  { name: 'Quân',       open_id: 'ou_placeholder_quan',   team: 'PRODUCT' },
-  { name: 'Chi',        open_id: 'ou_placeholder_chi',    team: 'L&D' },
-  { name: 'Giang',      open_id: 'ou_placeholder_giang',  team: 'BD' },
-  { name: 'Huyền Linh', open_id: 'ou_placeholder_hlinh',  team: 'BD' },
-  { name: 'Nga Linh',   open_id: 'ou_placeholder_nlinh',  team: 'BD' },
-  { name: 'Minh Anh',   open_id: 'ou_placeholder_manh',   team: 'ACCOUNT' },
-  { name: 'Hân',        open_id: 'ou_placeholder_han',    team: 'ACCOUNT' },
+  { name: 'Quân', open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'L&D' },
+  { name: 'Chi',  open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', team: 'L&D' },
 ]
 
 // ─── State ─────────────────────────────────────────────────
