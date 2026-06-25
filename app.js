@@ -429,8 +429,8 @@ function buildTaskBody() {
 
   const body = { summary, description, members }
   console.log('[Phase 2] members array:', JSON.stringify(members))
-  if (dueVal)   body.due      = { timestamp: toTimestampMs(dueVal), is_all_day: isAllDay }
-  if (startVal) body.start    = { timestamp: dateToTimestampMs(startVal), is_all_day: true }
+  if (dueVal)   body.due   = { timestamp: toTimestampMs(dueVal),   is_all_day: isAllDay }
+  if (startVal) body.start = { timestamp: toTimestampMs(startVal), is_all_day: isAllDay }
   if (reminderVal && Number(reminderVal) >= 0) body.reminders = [{ relative_fire_minute: Number(reminderVal) }]
   if (repeatVal)   body.repeat_rule = repeatVal
   if (tasklistVal) body.tasklists   = [{ tasklist_guid: tasklistVal }]
