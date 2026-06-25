@@ -1,6 +1,7 @@
 // ============================================================
 //  THINK-BEFORE-ACT — app.js
 //  PHASE 2: Gọi Cloudflare Worker → tạo Lark Task thật
+//  + Debug logs cho Lark SDK (Phase 1 fix)
 // ============================================================
 
 const APP_ID     = 'cli_aab1ef7c8d785ed4'
@@ -17,90 +18,6 @@ const MEMBERS = [
 ]
 
 const TEAM_FALLBACK = 'BD'
-
-// ─── Mock data (Phase 1.5 — thay bằng Lark Base ở Phase 6) ───
-const MOCK_TASKS = [
-  {
-    guid: 'task_001',
-    summary: 'làm video onboarding cho fresher tháng 7',
-    description: 'Cần 1 video giới thiệu quy trình làm việc tại F.Learning cho batch fresher tháng 7. Tone: thân thiện, không quá formal. Duration: 3-5 phút. Output: file mp4 + script hoàn chỉnh.',
-    assignee: 'Chi',
-    created_by: 'Quân',
-    created_at: '2025-06-20T09:00:00',
-    deadline: '2025-07-05T18:00:00',
-    status: 'in-progress',
-    team: 'L&D',
-    subtasks: [
-      { angle: 'q1 👤 phục vụ ai?',          done: true,  checked_at: '2025-06-20T10:15:00' },
-      { angle: 'q2 🎯 mục đích là gì?',       done: true,  checked_at: '2025-06-20T10:30:00' },
-      { angle: 'q3 📦 output trông thế nào?', done: true,  checked_at: '2025-06-20T11:00:00' },
-      { angle: 'q4 ⏰ deadline khi nào?',     done: false, checked_at: null },
-      { angle: 'q5 🔧 nguồn lực có gì?',      done: false, checked_at: null },
-      { angle: 'q6 📊 đào sâu tới đâu?',      done: false, checked_at: null },
-    ],
-    claude_suggestion: 'Dựa trên brief: đây là content onboarding nên ưu tiên tone thân thiện hơn educational. Gợi ý hỏi thêm manager về: (1) fresher đã có background gì chưa? (2) video này chạy 1 lần hay loop vào mỗi batch? (3) có cần subtitle không?',
-  },
-  {
-    guid: 'task_002',
-    summary: 'research case study e-learning cho ngành y tế',
-    description: 'Cần tổng hợp 5-7 case study e-learning trong lĩnh vực y tế/nursing. Tập trung vào instructional design approach. Output: doc tổng hợp có visual reference.',
-    assignee: 'Chi',
-    created_by: 'Quân',
-    created_at: '2025-06-18T14:00:00',
-    deadline: '2025-06-28T18:00:00',
-    status: 'done',
-    team: 'L&D',
-    subtasks: [
-      { angle: 'q1 👤 phục vụ ai?',          done: true, checked_at: '2025-06-18T15:00:00' },
-      { angle: 'q2 🎯 mục đích là gì?',       done: true, checked_at: '2025-06-18T15:20:00' },
-      { angle: 'q3 📦 output trông thế nào?', done: true, checked_at: '2025-06-18T15:40:00' },
-      { angle: 'q4 ⏰ deadline khi nào?',     done: true, checked_at: '2025-06-18T16:00:00' },
-      { angle: 'q5 🔧 nguồn lực có gì?',      done: true, checked_at: '2025-06-18T16:20:00' },
-      { angle: 'q6 📊 đào sâu tới đâu?',      done: true, checked_at: '2025-06-18T16:40:00' },
-    ],
-    claude_suggestion: 'Brief rõ ràng. Gợi ý thêm: nên check xem client đã có preference về nền tảng LMS nào chưa — sẽ ảnh hưởng đến format output.',
-  },
-  {
-    guid: 'task_003',
-    summary: 'build prototype interaction quiz module',
-    description: 'Prototype quiz module có branching scenario cho dự án client ngành banking. Tech: Articulate Storyline. Output: file .story + preview link.',
-    assignee: 'Quân',
-    created_by: 'Quân',
-    created_at: '2025-06-22T10:00:00',
-    deadline: '2025-07-10T18:00:00',
-    status: 'pending',
-    team: 'PRODUCT',
-    subtasks: [
-      { angle: 'q1 👤 phục vụ ai?',          done: false, checked_at: null },
-      { angle: 'q2 🎯 mục đích là gì?',       done: false, checked_at: null },
-      { angle: 'q3 📦 output trông thế nào?', done: false, checked_at: null },
-      { angle: 'q4 ⏰ deadline khi nào?',     done: false, checked_at: null },
-      { angle: 'q5 🔧 nguồn lực có gì?',      done: false, checked_at: null },
-      { angle: 'q6 📊 đào sâu tới đâu?',      done: false, checked_at: null },
-    ],
-    claude_suggestion: null,
-  },
-  {
-    guid: 'task_004',
-    summary: 'cold outreach script cho segment fintech q3',
-    description: 'Viết email sequence 3 bước cho cold outreach nhắm segment fintech. Tone: professional nhưng không robotic. Mỗi email < 150 chữ.',
-    assignee: 'Giang',
-    created_by: 'Quân',
-    created_at: '2025-06-21T09:00:00',
-    deadline: '2025-06-27T18:00:00',
-    status: 'in-progress',
-    team: 'BD',
-    subtasks: [
-      { angle: 'q1 👤 phục vụ ai?',          done: true,  checked_at: '2025-06-21T10:00:00' },
-      { angle: 'q2 🎯 mục đích là gì?',       done: true,  checked_at: '2025-06-21T10:30:00' },
-      { angle: 'q3 📦 output trông thế nào?', done: false, checked_at: null },
-      { angle: 'q4 ⏰ deadline khi nào?',     done: false, checked_at: null },
-      { angle: 'q5 🔧 nguồn lực có gì?',      done: false, checked_at: null },
-      { angle: 'q6 📊 đào sâu tới đâu?',      done: false, checked_at: null },
-    ],
-    claude_suggestion: 'Segment fintech khá rộng — gợi ý hỏi thêm: (1) focus B2B hay B2C fintech? (2) pain point chính muốn address là gì? (3) đã có case study liên quan chưa để reference?',
-  },
-]
 
 // ─── State ─────────────────────────────────────────────────
 
@@ -124,6 +41,8 @@ async function initLark() {
   const nameEl   = document.getElementById('nameDisplay')
   const avatarEl = document.getElementById('userAvatar')
 
+  console.log('[Lark SDK] env check — h5sdk:', typeof window.h5sdk, 'tt:', typeof window.tt, 'UA:', navigator.userAgent)
+
   if (typeof window.h5sdk === 'undefined' && typeof window.tt === 'undefined') {
     isInLark = false
     nameEl.textContent = '(ngoài Lark)'
@@ -136,34 +55,49 @@ async function initLark() {
 
   try {
     if (window.h5sdk) {
+      console.log('[Lark SDK] using h5sdk path')
       window.h5sdk.ready(() => {
+        console.log('[Lark SDK] h5sdk.ready fired')
         window.h5sdk.call('getUserInfo', {}, (res) => {
+          console.log('[Lark SDK] getUserInfo response:', JSON.stringify(res))
           if (res && res.user) {
             currentUser.name    = res.user.name   || res.user.displayName || ''
             currentUser.avatar  = res.user.avatar || res.user.avatarUrl   || ''
             currentUser.open_id = res.user.openId || ''
+            console.log('[Lark SDK] parsed user:', currentUser)
             updateHeaderUser(nameEl, avatarEl)
             resolveUserTeam()
           } else {
+            console.warn('[Lark SDK] no res.user — fallback')
             fallbackUser(nameEl)
           }
         })
       })
-      window.h5sdk.error((err) => { fallbackUser(nameEl) })
+      window.h5sdk.error((err) => {
+        console.error('[Lark SDK] h5sdk.error:', JSON.stringify(err))
+        fallbackUser(nameEl)
+      })
     } else if (window.tt) {
+      console.log('[Lark SDK] using tt path')
       window.tt.ready(() => {
+        console.log('[Lark SDK] tt.ready fired')
         window.tt.getUserInfo({
           success(res) {
+            console.log('[Lark SDK] tt.getUserInfo success:', JSON.stringify(res))
             currentUser.name    = res.userInfo?.nickName || res.userInfo?.name || ''
             currentUser.avatar  = res.userInfo?.avatarUrl || ''
             updateHeaderUser(nameEl, avatarEl)
             resolveUserTeam()
           },
-          fail() { fallbackUser(nameEl) }
+          fail(err) {
+            console.error('[Lark SDK] tt.getUserInfo fail:', JSON.stringify(err))
+            fallbackUser(nameEl)
+          }
         })
       })
     }
   } catch (e) {
+    console.error('[Lark SDK] init exception:', e.message)
     fallbackUser(nameEl)
     setTeam(TEAM_FALLBACK)
   }
@@ -183,6 +117,7 @@ function fallbackUser(nameEl) {
 function resolveUserTeam() {
   const match = MEMBERS.find(m => m.open_id === currentUser.open_id)
   currentUser.team = match ? match.team : TEAM_FALLBACK
+  console.log('[Lark SDK] resolved team:', currentUser.team, 'matched member:', !!match)
   setTeam(currentUser.team)
 }
 
@@ -202,7 +137,6 @@ async function renderDashboard(team) {
   const listEl = document.getElementById('taskList')
   listEl.innerHTML = '<div class="empty-state"><p>đang tải...</p></div>'
 
-  // Reset stats
   document.getElementById('stat-total').textContent   = '—'
   document.getElementById('stat-done').textContent    = '—'
   document.getElementById('stat-pending').textContent = '—'
@@ -222,7 +156,6 @@ async function renderDashboard(team) {
       return
     }
 
-    // Map subtasks theo task_guid
     const subMap = {}
     subtasks.forEach(s => {
       const f       = s.fields
@@ -235,7 +168,6 @@ async function renderDashboard(team) {
       })
     })
 
-    // Build task objects
     const taskList = tasks.map(t => {
       const f = t.fields
       return {
@@ -253,7 +185,6 @@ async function renderDashboard(team) {
       }
     })
 
-    // Stats
     const total   = taskList.length
     const done    = taskList.filter(t => t.status === 'done').length
     const pending = taskList.filter(t => t.status !== 'done').length
@@ -426,8 +357,6 @@ function toggleFollower(member, chipEl) {
 
 function toTimestampMs(dateStr) {
   if (!dateStr) return null
-  // datetime-local: "2025-07-01T18:00" → parse trực tiếp
-  // date-only: "2025-07-01" → thêm T00:00 để tránh UTC offset bug
   const normalized = dateStr.length === 10 ? dateStr + 'T00:00' : dateStr
   const ms = new Date(normalized).getTime()
   return isNaN(ms) ? null : String(ms)
@@ -465,7 +394,6 @@ function buildTaskBody() {
   const repeatVal    = document.getElementById('f-repeat').value
   const tasklistVal  = document.getElementById('f-tasklist').value.trim()
 
-  // Append output kỳ vọng vào description
   const description = outputExpect
     ? `${descRaw}\n\n---\n📦 output kỳ vọng:\n${outputExpect}`
     : descRaw
@@ -551,6 +479,7 @@ async function submitTask() {
       body:    JSON.stringify({ task_guid: taskGuid, subtasks }),
     })
     const subData = await subRes.json()
+    console.log('[Phase 3] create-subtasks response:', JSON.stringify(subData))
 
     const subFailed = subData.results
       ? subData.results.filter(r => !r.data || !r.data.task).length
@@ -564,13 +493,14 @@ async function submitTask() {
         subtask_guid: r.data.task.guid,
         question:     WARMUP_QUESTIONS[i],
       }))
+    console.log('[Phase 6] subtaskList to write-to-base:', JSON.stringify(subtaskList))
 
     try {
-      await fetch(`${WORKER_URL}/write-to-base`, {
+      const wrRes  = await fetch(`${WORKER_URL}/write-to-base`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          team:          selectedAssignee.team,
+          team:          currentTeam || selectedAssignee.team,
           task_guid:     taskGuid,
           summary:       body.summary,
           description:   body.description,
@@ -580,6 +510,8 @@ async function submitTask() {
           subtasks:      subtaskList,
         }),
       })
+      const wrData = await wrRes.json()
+      console.log('[Phase 6] write-to-base response:', JSON.stringify(wrData))
     } catch (e) {
       console.warn('[Phase 6] write-to-base lỗi:', e.message)
     }
@@ -587,7 +519,7 @@ async function submitTask() {
     // Bước 4: generate suggestion + post comment
     setSubmitState(true, 'suggestion')
     try {
-      await fetch(`${WORKER_URL}/generate-suggestion`, {
+      const sugRes  = await fetch(`${WORKER_URL}/generate-suggestion`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -598,6 +530,8 @@ async function submitTask() {
           assignee_team:    selectedAssignee.team,
         }),
       })
+      const sugData = await sugRes.json()
+      console.log('[Phase 5] generate-suggestion response:', JSON.stringify(sugData))
     } catch (e) {
       console.warn('[Phase 5] generate-suggestion lỗi:', e.message)
     }
