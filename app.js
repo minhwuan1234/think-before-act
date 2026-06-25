@@ -9,6 +9,11 @@ const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
 const MEMBERS = [
   { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'PRODUCT' },
   { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', team: 'L&D' },
+  { name: 'Giang',      open_id: 'ou_placeholder_giang',                  team: 'BD' },
+  { name: 'Huyền Linh', open_id: 'ou_placeholder_hlinh',                  team: 'BD' },
+  { name: 'Nga Linh',   open_id: 'ou_placeholder_nlinh',                  team: 'BD' },
+  { name: 'Minh Anh',   open_id: 'ou_placeholder_manh',                   team: 'ACCOUNT' },
+  { name: 'Hân',        open_id: 'ou_placeholder_han',                    team: 'ACCOUNT' },
 ]
 
 const TEAM_FALLBACK = 'BD'
@@ -309,6 +314,7 @@ function toggleCreateForm() {
 function resetForm() {
   document.getElementById('f-summary').value    = ''
   document.getElementById('f-description').value = ''
+  document.getElementById('f-output').value       = ''
   document.getElementById('f-start').value      = ''
   document.getElementById('f-due').value        = ''
   document.getElementById('f-allday').checked   = false
@@ -399,14 +405,20 @@ function setSubmitState(loading) {
 // ─── Build task body ────────────────────────────────────────
 
 function buildTaskBody() {
-  const summary     = document.getElementById('f-summary').value.trim()
-  const description = document.getElementById('f-description').value.trim()
-  const startVal    = document.getElementById('f-start').value
-  const dueVal      = document.getElementById('f-due').value
-  const isAllDay    = document.getElementById('f-allday').checked
-  const reminderVal = document.getElementById('f-reminder').value
-  const repeatVal   = document.getElementById('f-repeat').value
-  const tasklistVal = document.getElementById('f-tasklist').value.trim()
+  const summary      = document.getElementById('f-summary').value.trim()
+  const descRaw      = document.getElementById('f-description').value.trim()
+  const outputExpect = document.getElementById('f-output').value.trim()
+  const startVal     = document.getElementById('f-start').value
+  const dueVal       = document.getElementById('f-due').value
+  const isAllDay     = document.getElementById('f-allday').checked
+  const reminderVal  = document.getElementById('f-reminder').value
+  const repeatVal    = document.getElementById('f-repeat').value
+  const tasklistVal  = document.getElementById('f-tasklist').value.trim()
+
+  // Append output kỳ vọng vào description
+  const description = outputExpect
+    ? `${descRaw}\n\n---\n📦 output kỳ vọng:\n${outputExpect}`
+    : descRaw
 
   const members = []
   if (selectedAssignee) members.push({ id: selectedAssignee.open_id, type: 'user', role: 'assignee' })
@@ -416,6 +428,7 @@ function buildTaskBody() {
   })
 
   const body = { summary, description, members }
+  console.log('[Phase 2] members array:', JSON.stringify(members))
   if (dueVal)   body.due      = { timestamp: toTimestampMs(dueVal), is_all_day: isAllDay }
   if (startVal) body.start    = { timestamp: dateToTimestampMs(startVal), is_all_day: true }
   if (reminderVal && Number(reminderVal) >= 0) body.reminders = [{ relative_fire_minute: Number(reminderVal) }]
@@ -430,10 +443,12 @@ function buildTaskBody() {
 function validate() {
   const summary = document.getElementById('f-summary').value.trim()
   const desc    = document.getElementById('f-description').value.trim()
+  const output  = document.getElementById('f-output').value.trim()
   document.getElementById('err-summary').classList.toggle('show', !summary)
   document.getElementById('err-description').classList.toggle('show', !desc)
+  document.getElementById('err-output').classList.toggle('show', !output)
   document.getElementById('err-assignee').classList.toggle('show', !selectedAssignee)
-  return !!(summary && desc && selectedAssignee)
+  return !!(summary && desc && output && selectedAssignee)
 }
 
 // ─── Submit → gọi Worker thật ───────────────────────────────
