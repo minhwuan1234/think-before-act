@@ -332,6 +332,24 @@
       margin-top: 3px;
     }
     .task-card.open .chevron { transform: rotate(180deg); }
+    /* ── Result panel ── */
+    .result-panel {
+      margin-top: 16px; padding: 14px;
+      border: 1px solid;
+    }
+    .result-panel.success {
+      border-color: var(--green-bd); background: var(--green-bg);
+    }
+    .result-panel.error {
+      border-color: var(--red-bd); background: var(--red-bg);
+    }
+    .result-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; margin-bottom: 8px;
+    }
+    .result-panel.success .result-title { color: var(--green); }
+    .result-panel.error   .result-title { color: var(--red); }
+    .result-body { font-size: 12px; line-height: 1.7; }
   </style>
 </head>
 <body>
@@ -454,11 +472,13 @@
       </div>
 
       <div class="form-actions">
-        <button class="btn btn-dark" onclick="submitTask()">tạo task →</button>
+        <button class="btn btn-dark" id="btnSubmit" onclick="submitTask()">tạo task →</button>
         <button class="btn btn-ghost" onclick="toggleCreateForm()">huỷ</button>
       </div>
 
-      <!-- Debug panel -->
+      <!-- Result panel -->
+      <div class="result-panel" id="resultPanel" style="display:none;"></div>
+
       <div class="debug" id="debugPanel" style="display:none;">
         <div class="debug-title">// data sẽ gửi tới lark api (phase 1 — preview)</div>
         <pre id="debugOutput"></pre>
