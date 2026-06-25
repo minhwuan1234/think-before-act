@@ -374,13 +374,10 @@ function toggleFollower(member, chipEl) {
 
 function toTimestampMs(dateStr) {
   if (!dateStr) return null
-  const ms = new Date(dateStr).getTime()
-  return isNaN(ms) ? null : String(ms)
-}
-
-function dateToTimestampMs(dateStr) {
-  if (!dateStr) return null
-  const ms = new Date(dateStr + 'T00:00:00').getTime()
+  // datetime-local: "2025-07-01T18:00" → parse trực tiếp
+  // date-only: "2025-07-01" → thêm T00:00 để tránh UTC offset bug
+  const normalized = dateStr.length === 10 ? dateStr + 'T00:00' : dateStr
+  const ms = new Date(normalized).getTime()
   return isNaN(ms) ? null : String(ms)
 }
 
@@ -430,8 +427,15 @@ function buildTaskBody() {
 
   const body = { summary, description, members }
   console.log('[Phase 2] members array:', JSON.stringify(members))
-  if (dueVal)   body.due   = { timestamp: toTimestampMs(dueVal),   is_all_day: isAllDay }
-  if (startVal) body.start = { timestamp: toTimestampMs(startVal), is_all_day: isAllDay }
+  if (dueVal) {
+    const dueTs = toTimestampMs(dueVal)
+    if (dueTs) body.due = { timestamp: dueTs, is_all_day: isAllDay }
+  }
+
+  if (startVal) {
+    const startTs = toTimestampMs(startVal)
+    if (startTs) body.start = { timestamp: startTs, is_all_day: isAllDay }
+  }
   if (reminderVal && Number(reminderVal) >= 0) body.reminders = [{ relative_fire_minute: Number(reminderVal) }]
   if (repeatVal)   body.repeat_rule = repeatVal
   if (tasklistVal) body.tasklists   = [{ tasklist_guid: tasklistVal }]
