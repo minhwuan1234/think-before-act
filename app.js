@@ -394,11 +394,12 @@ function formatDateShort(isoStr) {
   return `${d.getDate()}/${d.getMonth()+1}`
 }
 
-function setSubmitState(loading) {
+function setSubmitState(loading, step) {
   isSubmitting = loading
   const btn = document.getElementById('btnSubmit')
-  btn.textContent  = loading ? 'đang tạo task...' : 'tạo task →'
-  btn.disabled     = loading
+  const txt = step === 'subtask' ? 'đang tạo subtask...' : loading ? 'đang tạo task...' : 'tạo task →'
+  btn.textContent   = txt
+  btn.disabled      = loading
   btn.style.opacity = loading ? '.6' : '1'
 }
 
@@ -464,6 +465,7 @@ async function submitTask() {
   const body = buildTaskBody()
 
   try {
+    // Bước 1: tạo task chính
     const res  = await fetch(`${WORKER_URL}/create-task`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -471,13 +473,35 @@ async function submitTask() {
     })
     const data = await res.json()
 
-    if (data.data && data.data.task && data.data.task.guid) {
-      showResult('success', data.data.task.guid)
-    } else {
-      // Lark trả lỗi
+    if (!data.data || !data.data.task || !data.data.task.guid) {
       const errMsg = data.msg || data.message || JSON.stringify(data)
       showResult('error', null, errMsg)
+      return
     }
+
+    const taskGuid = data.data.task.guid
+
+    // Bước 2: tạo 6 subtask
+    setSubmitState(true, 'subtask')
+    const assigneeId = selectedAssignee.open_id
+    const subtasks = WARMUP_QUESTIONS.map(q => ({
+      summary: q,
+      members: [{ id: assigneeId, type: 'user', role: 'assignee' }],
+    }))
+
+    const subRes  = await fetch(`${WORKER_URL}/create-subtasks`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ task_guid: taskGuid, subtasks }),
+    })
+    const subData = await subRes.json()
+
+    const subFailed = subData.results
+      ? subData.results.filter(r => !r.data || !r.data.task).length
+      : 1
+
+    showResult('success', taskGuid, null, subFailed)
+
   } catch (err) {
     showResult('error', null, err.message)
   } finally {
@@ -485,16 +509,29 @@ async function submitTask() {
   }
 }
 
-function showResult(type, taskGuid, errMsg) {
+const WARMUP_QUESTIONS = [
+  'q1 👤 phục vụ ai? — audience: tên cụ thể, vai trò, context user cuối',
+  'q2 🎯 mục đích là gì? — purpose: vì sao cần, kết quả nếu làm đúng',
+  'q3 📦 output trông thế nào? — output: dạng gì, cỡ nào, kênh nào',
+  'q4 ⏰ deadline khi nào? — deadline: cứng/mềm, có milestone giữa chừng không',
+  'q5 🔧 nguồn lực có gì? — resources: người, ngân sách, công cụ',
+  'q6 📊 đào sâu tới đâu? — depth: cần draft approve hướng hay file hoàn chỉnh',
+]
+
+function showResult(type, taskGuid, errMsg, subFailed) {
   const panel = document.getElementById('resultPanel')
   panel.style.display = 'block'
 
   if (type === 'success') {
+    const subNote = subFailed === 0
+      ? '6 câu warm-up đã được tạo thành subtask.'
+      : `⚠ ${subFailed}/6 subtask tạo không thành công — kiểm tra lại trong Lark.`
     panel.className = 'result-panel success'
     panel.innerHTML = `
       <div class="result-title">// task đã tạo thành công</div>
       <div class="result-body">
         task guid: <strong>${taskGuid}</strong><br>
+        ${subNote}<br>
         junior sẽ nhận được notification trong Lark.
       </div>
       <button class="btn btn-ghost" style="margin-top:12px;width:auto;padding:8px 14px" onclick="resetForm();toggleCreateForm()">tạo task khác</button>
