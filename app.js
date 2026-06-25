@@ -394,7 +394,7 @@ function formatDateShort(isoStr) {
 function setSubmitState(loading, step) {
   isSubmitting = loading
   const btn = document.getElementById('btnSubmit')
-  const txt = step === 'subtask' ? 'đang tạo subtask...' : loading ? 'đang tạo task...' : 'tạo task →'
+  const txt = step === 'subtask' ? 'đang tạo subtask...' : step === 'suggestion' ? 'đang tạo gợi ý...' : loading ? 'đang tạo task...' : 'tạo task →'
   btn.textContent   = txt
   btn.disabled      = loading
   btn.style.opacity = loading ? '.6' : '1'
@@ -503,6 +503,25 @@ async function submitTask() {
     const subFailed = subData.results
       ? subData.results.filter(r => !r.data || !r.data.task).length
       : 1
+
+    // Bước 3: generate suggestion + post comment
+    setSubmitState(true, 'suggestion')
+    try {
+      await fetch(`${WORKER_URL}/generate-suggestion`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task_guid:          taskGuid,
+          summary:            body.summary,
+          description:        body.description,
+          assignee_open_id:   selectedAssignee.open_id,
+          assignee_team:      selectedAssignee.team,
+        }),
+      })
+    } catch (e) {
+      console.warn('[Phase 5] generate-suggestion lỗi:', e.message)
+      // Không block — task + subtask đã tạo xong
+    }
 
     showResult('success', taskGuid, null, subFailed)
 
