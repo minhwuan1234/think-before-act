@@ -7,7 +7,7 @@ const APP_ID     = 'cli_aab1ef7c8d785ed4'
 const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
 
 const MEMBERS = [
-  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'PRODUCT' },
+  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'BD' },
   { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', team: 'L&D' },
   { name: 'Giang',      open_id: 'ou_placeholder_giang',                  team: 'BD' },
   { name: 'Huyền Linh', open_id: 'ou_placeholder_hlinh',                  team: 'BD' },
