@@ -1,30 +1,109 @@
 // ============================================================
 //  THINK-BEFORE-ACT — app.js
-//  PHASE 1: Giao diện Admin tạo task + Lark SDK lấy user_id
-//  (Chưa gọi API tạo task — chỉ thu thập data + preview)
+//  PHASE 1.5: Dashboard-first layout + mock data
 // ============================================================
 
 const APP_ID = 'cli_aab1ef7c8d785ed4'
 
-// ─── members.json (tạm hardcode — Phase 4 sẽ tách ra file riêng) ───
-// Cấu trúc: name → { open_id, team, base_token }
-// Phase 1 chỉ cần name + open_id để chọn assignee. team/base dùng sau.
 const MEMBERS = [
-  { name: 'Quân', open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'L&D' },
-  { name: 'Chi',  open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', team: 'L&D' },
+  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'PRODUCT' },
+  { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', team: 'L&D' },
+]
+
+// Team → default nếu open_id không match
+const TEAM_FALLBACK = 'BD'
+
+// ─── Mock data (Phase 1.5 — thay bằng Lark Base ở Phase 6) ───
+const MOCK_TASKS = [
+  {
+    guid: 'task_001',
+    summary: 'làm video onboarding cho fresher tháng 7',
+    description: 'Cần 1 video giới thiệu quy trình làm việc tại F.Learning cho batch fresher tháng 7. Tone: thân thiện, không quá formal. Duration: 3-5 phút. Output: file mp4 + script hoàn chỉnh.',
+    assignee: 'Chi',
+    created_by: 'Quân',
+    created_at: '2025-06-20T09:00:00',
+    deadline: '2025-07-05T18:00:00',
+    status: 'in-progress',
+    team: 'L&D',
+    subtasks: [
+      { angle: 'q1 👤 phục vụ ai?',          done: true,  checked_at: '2025-06-20T10:15:00' },
+      { angle: 'q2 🎯 mục đích là gì?',       done: true,  checked_at: '2025-06-20T10:30:00' },
+      { angle: 'q3 📦 output trông thế nào?', done: true,  checked_at: '2025-06-20T11:00:00' },
+      { angle: 'q4 ⏰ deadline khi nào?',     done: false, checked_at: null },
+      { angle: 'q5 🔧 nguồn lực có gì?',      done: false, checked_at: null },
+      { angle: 'q6 📊 đào sâu tới đâu?',      done: false, checked_at: null },
+    ],
+    claude_suggestion: 'Dựa trên brief: đây là content onboarding nên ưu tiên tone thân thiện hơn educational. Gợi ý hỏi thêm manager về: (1) fresher đã có background gì chưa? (2) video này chạy 1 lần hay loop vào mỗi batch? (3) có cần subtitle không?',
+  },
+  {
+    guid: 'task_002',
+    summary: 'research case study e-learning cho ngành y tế',
+    description: 'Cần tổng hợp 5-7 case study e-learning trong lĩnh vực y tế/nursing. Tập trung vào instructional design approach. Output: doc tổng hợp có visual reference.',
+    assignee: 'Chi',
+    created_by: 'Quân',
+    created_at: '2025-06-18T14:00:00',
+    deadline: '2025-06-28T18:00:00',
+    status: 'done',
+    team: 'L&D',
+    subtasks: [
+      { angle: 'q1 👤 phục vụ ai?',          done: true, checked_at: '2025-06-18T15:00:00' },
+      { angle: 'q2 🎯 mục đích là gì?',       done: true, checked_at: '2025-06-18T15:20:00' },
+      { angle: 'q3 📦 output trông thế nào?', done: true, checked_at: '2025-06-18T15:40:00' },
+      { angle: 'q4 ⏰ deadline khi nào?',     done: true, checked_at: '2025-06-18T16:00:00' },
+      { angle: 'q5 🔧 nguồn lực có gì?',      done: true, checked_at: '2025-06-18T16:20:00' },
+      { angle: 'q6 📊 đào sâu tới đâu?',      done: true, checked_at: '2025-06-18T16:40:00' },
+    ],
+    claude_suggestion: 'Brief rõ ràng. Gợi ý thêm: nên check xem client đã có preference về nền tảng LMS nào chưa — sẽ ảnh hưởng đến format output.',
+  },
+  {
+    guid: 'task_003',
+    summary: 'build prototype interaction quiz module',
+    description: 'Prototype quiz module có branching scenario cho dự án client ngành banking. Tech: Articulate Storyline. Output: file .story + preview link.',
+    assignee: 'Quân',
+    created_by: 'Quân',
+    created_at: '2025-06-22T10:00:00',
+    deadline: '2025-07-10T18:00:00',
+    status: 'pending',
+    team: 'PRODUCT',
+    subtasks: [
+      { angle: 'q1 👤 phục vụ ai?',          done: false, checked_at: null },
+      { angle: 'q2 🎯 mục đích là gì?',       done: false, checked_at: null },
+      { angle: 'q3 📦 output trông thế nào?', done: false, checked_at: null },
+      { angle: 'q4 ⏰ deadline khi nào?',     done: false, checked_at: null },
+      { angle: 'q5 🔧 nguồn lực có gì?',      done: false, checked_at: null },
+      { angle: 'q6 📊 đào sâu tới đâu?',      done: false, checked_at: null },
+    ],
+    claude_suggestion: null,
+  },
+  {
+    guid: 'task_004',
+    summary: 'cold outreach script cho segment fintech q3',
+    description: 'Viết email sequence 3 bước cho cold outreach nhắm segment fintech. Tone: professional nhưng không robotic. Mỗi email < 150 chữ.',
+    assignee: 'Giang',
+    created_by: 'Quân',
+    created_at: '2025-06-21T09:00:00',
+    deadline: '2025-06-27T18:00:00',
+    status: 'in-progress',
+    team: 'BD',
+    subtasks: [
+      { angle: 'q1 👤 phục vụ ai?',          done: true,  checked_at: '2025-06-21T10:00:00' },
+      { angle: 'q2 🎯 mục đích là gì?',       done: true,  checked_at: '2025-06-21T10:30:00' },
+      { angle: 'q3 📦 output trông thế nào?', done: false, checked_at: null },
+      { angle: 'q4 ⏰ deadline khi nào?',     done: false, checked_at: null },
+      { angle: 'q5 🔧 nguồn lực có gì?',      done: false, checked_at: null },
+      { angle: 'q6 📊 đào sâu tới đâu?',      done: false, checked_at: null },
+    ],
+    claude_suggestion: 'Segment fintech khá rộng — gợi ý hỏi thêm: (1) focus B2B hay B2C fintech? (2) pain point chính muốn address là gì? (3) đã có case study liên quan chưa để reference?',
+  },
 ]
 
 // ─── State ─────────────────────────────────────────────────
 
-let currentUser = {
-  open_id: '',
-  name:    '',
-  avatar:  '',
-}
+let currentUser = { open_id: '', name: '', avatar: '', team: '' }
 let isInLark = false
-
-let selectedAssignee  = null   // 1 người
-let selectedFollowers = []     // nhiều người
+let selectedAssignee  = null
+let selectedFollowers = []
+let currentTeam = ''
 
 // ─── Init ──────────────────────────────────────────────────
 
@@ -33,18 +112,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initLark()
 })
 
-// ─── Lark SDK: lấy user identity ───────────────────────────
+// ─── Lark SDK ──────────────────────────────────────────────
 
 async function initLark() {
   const nameEl   = document.getElementById('nameDisplay')
   const avatarEl = document.getElementById('userAvatar')
 
-  // Detect Lark client
   if (typeof window.h5sdk === 'undefined' && typeof window.tt === 'undefined') {
     console.warn('[Lark] Không phải trong Lark client — standalone mode')
     isInLark = false
     nameEl.textContent = '(ngoài Lark)'
     nameEl.classList.remove('loading')
+    // Standalone: dùng team mặc định
+    setTeam(TEAM_FALLBACK)
     return
   }
 
@@ -59,71 +139,236 @@ async function initLark() {
             currentUser.avatar  = res.user.avatar || res.user.avatarUrl   || ''
             currentUser.open_id = res.user.openId || ''
             updateHeaderUser(nameEl, avatarEl)
+            resolveUserTeam()
           } else {
             fallbackUser(nameEl)
           }
         })
       })
-      window.h5sdk.error((err) => {
-        console.warn('[Lark h5sdk] error:', err)
-        fallbackUser(nameEl)
-      })
+      window.h5sdk.error((err) => { console.warn('[Lark h5sdk] error:', err); fallbackUser(nameEl) })
     } else if (window.tt) {
       window.tt.ready(() => {
         window.tt.getUserInfo({
           success(res) {
-            currentUser.name   = res.userInfo?.nickName || res.userInfo?.name || ''
-            currentUser.avatar = res.userInfo?.avatarUrl || ''
+            currentUser.name    = res.userInfo?.nickName || res.userInfo?.name || ''
+            currentUser.avatar  = res.userInfo?.avatarUrl || ''
             updateHeaderUser(nameEl, avatarEl)
+            resolveUserTeam()
           },
-          fail(err) {
-            console.warn('[Lark tt] fail:', err)
-            fallbackUser(nameEl)
-          }
+          fail(err) { console.warn('[Lark tt] fail:', err); fallbackUser(nameEl) }
         })
       })
     }
   } catch (e) {
     console.warn('[Lark] init error:', e.message)
     fallbackUser(nameEl)
+    setTeam(TEAM_FALLBACK)
   }
 }
 
 function updateHeaderUser(nameEl, avatarEl) {
-  if (currentUser.name) {
-    nameEl.textContent = currentUser.name
-    nameEl.classList.remove('loading')
-  }
-  if (currentUser.avatar) {
-    avatarEl.src = currentUser.avatar
-    avatarEl.style.display = 'block'
-  }
-  console.log('[Lark] User:', currentUser)
+  if (currentUser.name) { nameEl.textContent = currentUser.name; nameEl.classList.remove('loading') }
+  if (currentUser.avatar) { avatarEl.src = currentUser.avatar; avatarEl.style.display = 'block' }
 }
 
 function fallbackUser(nameEl) {
   nameEl.textContent = '(không lấy được tên)'
   nameEl.classList.remove('loading')
+  setTeam(TEAM_FALLBACK)
 }
 
-// ─── Render member chips ───────────────────────────────────
+// Resolve team từ open_id
+function resolveUserTeam() {
+  const match = MEMBERS.find(m => m.open_id === currentUser.open_id)
+  if (match) {
+    currentUser.team = match.team
+    setTeam(match.team)
+  } else {
+    setTeam(TEAM_FALLBACK)
+  }
+}
+
+// ─── Set team + render dashboard ───────────────────────────
+
+function setTeam(team) {
+  currentTeam = team
+  const labelEl = document.getElementById('teamLabel')
+  labelEl.textContent = 'team: ' + team
+  labelEl.classList.remove('loading')
+  renderDashboard(team)
+}
+
+// ─── Dashboard render ───────────────────────────────────────
+
+function renderDashboard(team) {
+  const tasks = MOCK_TASKS.filter(t => t.team === team)
+
+  // Stats
+  const total   = tasks.length
+  const done    = tasks.filter(t => t.status === 'done').length
+  const pending = tasks.filter(t => t.status !== 'done').length
+
+  document.getElementById('stat-total').textContent   = total
+  document.getElementById('stat-done').textContent    = done
+  document.getElementById('stat-pending').textContent = pending
+
+  // Task list
+  const listEl = document.getElementById('taskList')
+  if (tasks.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <p>chưa có task nào cho team ${team}.</p>
+      </div>`
+    return
+  }
+
+  listEl.innerHTML = ''
+  tasks.forEach(task => {
+    listEl.appendChild(buildTaskCard(task))
+  })
+}
+
+function buildTaskCard(task) {
+  const doneCount = task.subtasks.filter(s => s.done).length
+  const total     = task.subtasks.length
+  const deadlineBadge = getDeadlineBadge(task.deadline)
+
+  const card = document.createElement('div')
+  card.className = 'task-card'
+  card.dataset.guid = task.guid
+
+  card.innerHTML = `
+    <div class="task-row" onclick="toggleTaskDetail('${task.guid}')">
+      <div class="task-status ${task.status === 'done' ? 'done' : task.status === 'in-progress' ? 'in-progress' : ''}"></div>
+      <div class="task-main">
+        <div class="task-name">${task.summary}</div>
+        <div class="task-meta">
+          <span>→ ${task.assignee}</span>
+          <span>by ${task.created_by}</span>
+          ${deadlineBadge}
+        </div>
+      </div>
+      <div class="task-progress">
+        <span class="done-count">${doneCount}</span>/${total}
+        <div style="font-size:9px;margin-top:1px;color:var(--muted)">warm-up</div>
+      </div>
+      <div class="chevron">▾</div>
+    </div>
+    <div class="task-detail" id="detail-${task.guid}">
+      ${buildTaskDetail(task)}
+    </div>
+  `
+  return card
+}
+
+function buildTaskDetail(task) {
+  const subtaskHTML = task.subtasks.map(s => `
+    <div class="subtask-row">
+      <div class="subtask-check ${s.done ? 'done' : ''}">${s.done ? '✓' : ''}</div>
+      <span class="subtask-label ${s.done ? 'done' : ''}">${s.angle}</span>
+      ${s.done && s.checked_at ? `<span style="font-size:9px;color:var(--muted);margin-left:auto">${formatDate(s.checked_at)}</span>` : ''}
+    </div>
+  `).join('')
+
+  const claudeHTML = task.claude_suggestion ? `
+    <div class="claude-block">
+      <div class="claude-label">// gợi ý từ claude</div>
+      <div class="claude-text">${task.claude_suggestion}</div>
+    </div>
+  ` : ''
+
+  return `
+    <div class="detail-sec">
+      <div class="detail-label">brief</div>
+      <div class="detail-text">${task.description}</div>
+    </div>
+    <div class="detail-sec">
+      <div class="detail-label">6 câu warm-up</div>
+      <div class="subtask-list">${subtaskHTML}</div>
+    </div>
+    ${claudeHTML}
+  `
+}
+
+function toggleTaskDetail(guid) {
+  const detailEl = document.getElementById('detail-' + guid)
+  const cardEl   = detailEl.closest('.task-card')
+  detailEl.classList.toggle('open')
+  cardEl.classList.toggle('open')
+}
+
+// ─── Deadline badge ─────────────────────────────────────────
+
+function getDeadlineBadge(deadlineStr) {
+  if (!deadlineStr) return ''
+  const dl   = new Date(deadlineStr)
+  const now  = new Date()
+  const diff = dl - now
+  const days = diff / (1000 * 60 * 60 * 24)
+
+  if (diff < 0) {
+    return `<span class="deadline-badge overdue">quá hạn</span>`
+  } else if (days <= 3) {
+    return `<span class="deadline-badge soon">deadline: ${formatDateShort(deadlineStr)}</span>`
+  } else {
+    return `<span class="deadline-badge ok">deadline: ${formatDateShort(deadlineStr)}</span>`
+  }
+}
+
+// ─── Create form toggle ─────────────────────────────────────
+
+function toggleCreateForm() {
+  const section = document.getElementById('createSection')
+  const toggle  = document.getElementById('createToggle')
+  const isOpen  = section.classList.toggle('open')
+  toggle.classList.toggle('open', isOpen)
+  toggle.querySelector('span:last-child').textContent = isOpen ? 'đóng form' : 'tạo task mới'
+  toggle.querySelector('.icon').textContent = isOpen ? '×' : '+'
+  if (isOpen) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  } else {
+    resetForm()
+  }
+}
+
+function resetForm() {
+  document.getElementById('f-summary').value = ''
+  document.getElementById('f-description').value = ''
+  document.getElementById('f-start').value = ''
+  document.getElementById('f-due').value = ''
+  document.getElementById('f-allday').checked = false
+  document.getElementById('f-reminder').value = ''
+  document.getElementById('f-repeat').value = ''
+  document.getElementById('f-tasklist').value = ''
+  document.getElementById('debugPanel').style.display = 'none'
+  selectedAssignee  = null
+  selectedFollowers = []
+  document.querySelectorAll('.member-chip').forEach(c => c.classList.remove('selected'))
+  document.querySelectorAll('.err').forEach(e => e.classList.remove('show'))
+  document.getElementById('advSection').classList.remove('open')
+}
+
+// ─── Advanced toggle ────────────────────────────────────────
+
+function toggleAdvanced() {
+  document.getElementById('advSection').classList.toggle('open')
+}
+
+// ─── Render member chips ────────────────────────────────────
 
 function renderMembers() {
   const assigneeEl = document.getElementById('assigneeList')
   const followerEl = document.getElementById('followerList')
-
   assigneeEl.innerHTML = ''
   followerEl.innerHTML = ''
 
   MEMBERS.forEach(m => {
-    // Assignee chip (chọn 1)
     const aChip = document.createElement('div')
     aChip.className = 'member-chip'
     aChip.textContent = m.name
     aChip.onclick = () => selectAssignee(m, aChip)
     assigneeEl.appendChild(aChip)
 
-    // Follower chip (chọn nhiều)
     const fChip = document.createElement('div')
     fChip.className = 'member-chip'
     fChip.textContent = m.name
@@ -133,9 +378,7 @@ function renderMembers() {
 }
 
 function selectAssignee(member, chipEl) {
-  // Bỏ chọn tất cả assignee chip
   document.querySelectorAll('#assigneeList .member-chip').forEach(c => c.classList.remove('selected'))
-  // Chọn chip này
   chipEl.classList.add('selected')
   selectedAssignee = member
   document.getElementById('err-assignee').classList.remove('show')
@@ -143,38 +386,35 @@ function selectAssignee(member, chipEl) {
 
 function toggleFollower(member, chipEl) {
   const idx = selectedFollowers.findIndex(f => f.open_id === member.open_id)
-  if (idx >= 0) {
-    selectedFollowers.splice(idx, 1)
-    chipEl.classList.remove('selected')
-  } else {
-    selectedFollowers.push(member)
-    chipEl.classList.add('selected')
-  }
+  if (idx >= 0) { selectedFollowers.splice(idx, 1); chipEl.classList.remove('selected') }
+  else          { selectedFollowers.push(member);    chipEl.classList.add('selected') }
 }
 
-// ─── Advanced toggle ───────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────
 
-function toggleAdvanced() {
-  document.getElementById('advSection').classList.toggle('open')
-}
-
-// ─── Helpers ───────────────────────────────────────────────
-
-// Convert datetime-local string → Unix timestamp milliseconds (string)
 function toTimestampMs(dateStr) {
   if (!dateStr) return null
   const ms = new Date(dateStr).getTime()
   return isNaN(ms) ? null : String(ms)
 }
 
-// Convert date string (yyyy-mm-dd) → timestamp ms
 function dateToTimestampMs(dateStr) {
   if (!dateStr) return null
   const ms = new Date(dateStr + 'T00:00:00').getTime()
   return isNaN(ms) ? null : String(ms)
 }
 
-// ─── Build Lark Task body ──────────────────────────────────
+function formatDate(isoStr) {
+  const d = new Date(isoStr)
+  return `${d.getDate()}/${d.getMonth()+1} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
+function formatDateShort(isoStr) {
+  const d = new Date(isoStr)
+  return `${d.getDate()}/${d.getMonth()+1}`
+}
+
+// ─── Build + validate + submit ──────────────────────────────
 
 function buildTaskBody() {
   const summary     = document.getElementById('f-summary').value.trim()
@@ -186,83 +426,44 @@ function buildTaskBody() {
   const repeatVal   = document.getElementById('f-repeat').value
   const tasklistVal = document.getElementById('f-tasklist').value.trim()
 
-  // members: assignee + followers
   const members = []
-  if (selectedAssignee) {
-    members.push({ id: selectedAssignee.open_id, type: 'user', role: 'assignee' })
-  }
+  if (selectedAssignee) members.push({ id: selectedAssignee.open_id, type: 'user', role: 'assignee' })
   selectedFollowers.forEach(f => {
-    // Tránh trùng: nếu follower cũng là assignee thì bỏ
-    if (!selectedAssignee || f.open_id !== selectedAssignee.open_id) {
+    if (!selectedAssignee || f.open_id !== selectedAssignee.open_id)
       members.push({ id: f.open_id, type: 'user', role: 'follower' })
-    }
   })
 
-  // Body theo schema Lark Task v2 create
-  const body = {
-    summary,
-    description,
-    members,
-  }
-
-  // due
-  if (dueVal) {
-    body.due = {
-      timestamp:  toTimestampMs(dueVal),
-      is_all_day: isAllDay,
-    }
-  }
-
-  // start
-  if (startVal) {
-    body.start = { timestamp: dateToTimestampMs(startVal), is_all_day: true }
-  }
-
-  // reminders
-  if (reminderVal && Number(reminderVal) >= 0) {
-    body.reminders = [{ relative_fire_minute: Number(reminderVal) }]
-  }
-
-  // repeat
-  if (repeatVal) body.repeat_rule = repeatVal
-
-  // tasklist
-  if (tasklistVal) body.tasklists = [{ tasklist_guid: tasklistVal }]
+  const body = { summary, description, members }
+  if (dueVal)   body.due      = { timestamp: toTimestampMs(dueVal), is_all_day: isAllDay }
+  if (startVal) body.start    = { timestamp: dateToTimestampMs(startVal), is_all_day: true }
+  if (reminderVal && Number(reminderVal) >= 0) body.reminders = [{ relative_fire_minute: Number(reminderVal) }]
+  if (repeatVal)   body.repeat_rule = repeatVal
+  if (tasklistVal) body.tasklists   = [{ tasklist_guid: tasklistVal }]
 
   return body
 }
 
-// ─── Validate ──────────────────────────────────────────────
-
 function validate() {
-  let ok = true
-
   const summary = document.getElementById('f-summary').value.trim()
   const desc    = document.getElementById('f-description').value.trim()
-
   document.getElementById('err-summary').classList.toggle('show', !summary)
   document.getElementById('err-description').classList.toggle('show', !desc)
   document.getElementById('err-assignee').classList.toggle('show', !selectedAssignee)
-
-  if (!summary || !desc || !selectedAssignee) ok = false
-  return ok
+  return !!(summary && desc && selectedAssignee)
 }
-
-// ─── Submit (Phase 1: chỉ preview data, chưa gọi API) ──────
 
 function submitTask() {
   if (!validate()) {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    document.getElementById('createSection').scrollIntoView({ behavior: 'smooth', block: 'start' })
     return
   }
 
   const body = buildTaskBody()
-
-  // Phase 1: hiển thị data ra debug panel để kiểm tra
   const preview = {
     _created_by: {
       name:    currentUser.name    || '(chưa lấy được)',
       open_id: currentUser.open_id || '(chưa lấy được)',
+      team:    currentUser.team    || currentTeam,
     },
     _assignee_team: selectedAssignee ? selectedAssignee.team : null,
     lark_task_body: body,
@@ -270,7 +471,5 @@ function submitTask() {
 
   document.getElementById('debugPanel').style.display = 'block'
   document.getElementById('debugOutput').textContent = JSON.stringify(preview, null, 2)
-  document.getElementById('debugPanel').scrollIntoView({ behavior: 'smooth', block: 'start' })
-
-  console.log('[Phase 1] Task body sẵn sàng gửi:', body)
+  console.log('[Phase 1.5] Task body sẵn sàng gửi:', body)
 }
