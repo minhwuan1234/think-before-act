@@ -1,16 +1,16 @@
 // ============================================================
 //  THINK-BEFORE-ACT — app.js
-//  PHASE 1.5: Dashboard-first layout + mock data
+//  PHASE 2: Gọi Cloudflare Worker → tạo Lark Task thật
 // ============================================================
 
-const APP_ID = 'cli_aab1ef7c8d785ed4'
+const APP_ID     = 'cli_aab1ef7c8d785ed4'
+const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
 
 const MEMBERS = [
   { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'PRODUCT' },
   { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', team: 'L&D' },
 ]
 
-// Team → default nếu open_id không match
 const TEAM_FALLBACK = 'BD'
 
 // ─── Mock data (Phase 1.5 — thay bằng Lark Base ở Phase 6) ───
@@ -104,6 +104,7 @@ let isInLark = false
 let selectedAssignee  = null
 let selectedFollowers = []
 let currentTeam = ''
+let isSubmitting = false
 
 // ─── Init ──────────────────────────────────────────────────
 
@@ -119,11 +120,9 @@ async function initLark() {
   const avatarEl = document.getElementById('userAvatar')
 
   if (typeof window.h5sdk === 'undefined' && typeof window.tt === 'undefined') {
-    console.warn('[Lark] Không phải trong Lark client — standalone mode')
     isInLark = false
     nameEl.textContent = '(ngoài Lark)'
     nameEl.classList.remove('loading')
-    // Standalone: dùng team mặc định
     setTeam(TEAM_FALLBACK)
     return
   }
@@ -145,7 +144,7 @@ async function initLark() {
           }
         })
       })
-      window.h5sdk.error((err) => { console.warn('[Lark h5sdk] error:', err); fallbackUser(nameEl) })
+      window.h5sdk.error((err) => { fallbackUser(nameEl) })
     } else if (window.tt) {
       window.tt.ready(() => {
         window.tt.getUserInfo({
@@ -155,12 +154,11 @@ async function initLark() {
             updateHeaderUser(nameEl, avatarEl)
             resolveUserTeam()
           },
-          fail(err) { console.warn('[Lark tt] fail:', err); fallbackUser(nameEl) }
+          fail() { fallbackUser(nameEl) }
         })
       })
     }
   } catch (e) {
-    console.warn('[Lark] init error:', e.message)
     fallbackUser(nameEl)
     setTeam(TEAM_FALLBACK)
   }
@@ -177,15 +175,10 @@ function fallbackUser(nameEl) {
   setTeam(TEAM_FALLBACK)
 }
 
-// Resolve team từ open_id
 function resolveUserTeam() {
   const match = MEMBERS.find(m => m.open_id === currentUser.open_id)
-  if (match) {
-    currentUser.team = match.team
-    setTeam(match.team)
-  } else {
-    setTeam(TEAM_FALLBACK)
-  }
+  currentUser.team = match ? match.team : TEAM_FALLBACK
+  setTeam(currentUser.team)
 }
 
 // ─── Set team + render dashboard ───────────────────────────
@@ -201,9 +194,7 @@ function setTeam(team) {
 // ─── Dashboard render ───────────────────────────────────────
 
 function renderDashboard(team) {
-  const tasks = MOCK_TASKS.filter(t => t.team === team)
-
-  // Stats
+  const tasks   = MOCK_TASKS.filter(t => t.team === team)
   const total   = tasks.length
   const done    = tasks.filter(t => t.status === 'done').length
   const pending = tasks.filter(t => t.status !== 'done').length
@@ -212,31 +203,23 @@ function renderDashboard(team) {
   document.getElementById('stat-done').textContent    = done
   document.getElementById('stat-pending').textContent = pending
 
-  // Task list
   const listEl = document.getElementById('taskList')
   if (tasks.length === 0) {
-    listEl.innerHTML = `
-      <div class="empty-state">
-        <p>chưa có task nào cho team ${team}.</p>
-      </div>`
+    listEl.innerHTML = `<div class="empty-state"><p>chưa có task nào cho team ${team}.</p></div>`
     return
   }
-
   listEl.innerHTML = ''
-  tasks.forEach(task => {
-    listEl.appendChild(buildTaskCard(task))
-  })
+  tasks.forEach(task => listEl.appendChild(buildTaskCard(task)))
 }
 
 function buildTaskCard(task) {
-  const doneCount = task.subtasks.filter(s => s.done).length
-  const total     = task.subtasks.length
+  const doneCount     = task.subtasks.filter(s => s.done).length
+  const total         = task.subtasks.length
   const deadlineBadge = getDeadlineBadge(task.deadline)
 
   const card = document.createElement('div')
   card.className = 'task-card'
   card.dataset.guid = task.guid
-
   card.innerHTML = `
     <div class="task-row" onclick="toggleTaskDetail('${task.guid}')">
       <div class="task-status ${task.status === 'done' ? 'done' : task.status === 'in-progress' ? 'in-progress' : ''}"></div>
@@ -305,14 +288,9 @@ function getDeadlineBadge(deadlineStr) {
   const now  = new Date()
   const diff = dl - now
   const days = diff / (1000 * 60 * 60 * 24)
-
-  if (diff < 0) {
-    return `<span class="deadline-badge overdue">quá hạn</span>`
-  } else if (days <= 3) {
-    return `<span class="deadline-badge soon">deadline: ${formatDateShort(deadlineStr)}</span>`
-  } else {
-    return `<span class="deadline-badge ok">deadline: ${formatDateShort(deadlineStr)}</span>`
-  }
+  if (diff < 0)    return `<span class="deadline-badge overdue">quá hạn</span>`
+  if (days <= 3)   return `<span class="deadline-badge soon">deadline: ${formatDateShort(deadlineStr)}</span>`
+  return             `<span class="deadline-badge ok">deadline: ${formatDateShort(deadlineStr)}</span>`
 }
 
 // ─── Create form toggle ─────────────────────────────────────
@@ -324,31 +302,27 @@ function toggleCreateForm() {
   toggle.classList.toggle('open', isOpen)
   toggle.querySelector('span:last-child').textContent = isOpen ? 'đóng form' : 'tạo task mới'
   toggle.querySelector('.icon').textContent = isOpen ? '×' : '+'
-  if (isOpen) {
-    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  } else {
-    resetForm()
-  }
+  if (isOpen) section.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  else resetForm()
 }
 
 function resetForm() {
-  document.getElementById('f-summary').value = ''
+  document.getElementById('f-summary').value    = ''
   document.getElementById('f-description').value = ''
-  document.getElementById('f-start').value = ''
-  document.getElementById('f-due').value = ''
-  document.getElementById('f-allday').checked = false
-  document.getElementById('f-reminder').value = ''
-  document.getElementById('f-repeat').value = ''
-  document.getElementById('f-tasklist').value = ''
-  document.getElementById('debugPanel').style.display = 'none'
+  document.getElementById('f-start').value      = ''
+  document.getElementById('f-due').value        = ''
+  document.getElementById('f-allday').checked   = false
+  document.getElementById('f-reminder').value   = ''
+  document.getElementById('f-repeat').value     = ''
+  document.getElementById('f-tasklist').value   = ''
+  document.getElementById('resultPanel').style.display = 'none'
   selectedAssignee  = null
   selectedFollowers = []
   document.querySelectorAll('.member-chip').forEach(c => c.classList.remove('selected'))
   document.querySelectorAll('.err').forEach(e => e.classList.remove('show'))
   document.getElementById('advSection').classList.remove('open')
+  setSubmitState(false)
 }
-
-// ─── Advanced toggle ────────────────────────────────────────
 
 function toggleAdvanced() {
   document.getElementById('advSection').classList.toggle('open')
@@ -414,7 +388,15 @@ function formatDateShort(isoStr) {
   return `${d.getDate()}/${d.getMonth()+1}`
 }
 
-// ─── Build + validate + submit ──────────────────────────────
+function setSubmitState(loading) {
+  isSubmitting = loading
+  const btn = document.getElementById('btnSubmit')
+  btn.textContent  = loading ? 'đang tạo task...' : 'tạo task →'
+  btn.disabled     = loading
+  btn.style.opacity = loading ? '.6' : '1'
+}
+
+// ─── Build task body ────────────────────────────────────────
 
 function buildTaskBody() {
   const summary     = document.getElementById('f-summary').value.trim()
@@ -443,6 +425,8 @@ function buildTaskBody() {
   return body
 }
 
+// ─── Validate ───────────────────────────────────────────────
+
 function validate() {
   const summary = document.getElementById('f-summary').value.trim()
   const desc    = document.getElementById('f-description').value.trim()
@@ -452,24 +436,61 @@ function validate() {
   return !!(summary && desc && selectedAssignee)
 }
 
-function submitTask() {
+// ─── Submit → gọi Worker thật ───────────────────────────────
+
+async function submitTask() {
+  if (isSubmitting) return
   if (!validate()) {
     document.getElementById('createSection').scrollIntoView({ behavior: 'smooth', block: 'start' })
     return
   }
 
+  setSubmitState(true)
   const body = buildTaskBody()
-  const preview = {
-    _created_by: {
-      name:    currentUser.name    || '(chưa lấy được)',
-      open_id: currentUser.open_id || '(chưa lấy được)',
-      team:    currentUser.team    || currentTeam,
-    },
-    _assignee_team: selectedAssignee ? selectedAssignee.team : null,
-    lark_task_body: body,
+
+  try {
+    const res  = await fetch(`${WORKER_URL}/create-task`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    })
+    const data = await res.json()
+
+    if (data.data && data.data.task && data.data.task.guid) {
+      showResult('success', data.data.task.guid)
+    } else {
+      // Lark trả lỗi
+      const errMsg = data.msg || data.message || JSON.stringify(data)
+      showResult('error', null, errMsg)
+    }
+  } catch (err) {
+    showResult('error', null, err.message)
+  } finally {
+    setSubmitState(false)
+  }
+}
+
+function showResult(type, taskGuid, errMsg) {
+  const panel = document.getElementById('resultPanel')
+  panel.style.display = 'block'
+
+  if (type === 'success') {
+    panel.className = 'result-panel success'
+    panel.innerHTML = `
+      <div class="result-title">// task đã tạo thành công</div>
+      <div class="result-body">
+        task guid: <strong>${taskGuid}</strong><br>
+        junior sẽ nhận được notification trong Lark.
+      </div>
+      <button class="btn btn-ghost" style="margin-top:12px;width:auto;padding:8px 14px" onclick="resetForm();toggleCreateForm()">tạo task khác</button>
+    `
+  } else {
+    panel.className = 'result-panel error'
+    panel.innerHTML = `
+      <div class="result-title">// lỗi khi tạo task</div>
+      <div class="result-body">${errMsg}</div>
+    `
   }
 
-  document.getElementById('debugPanel').style.display = 'block'
-  document.getElementById('debugOutput').textContent = JSON.stringify(preview, null, 2)
-  console.log('[Phase 1.5] Task body sẵn sàng gửi:', body)
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 }
