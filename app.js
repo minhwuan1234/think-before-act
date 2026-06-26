@@ -9,7 +9,7 @@ const APP_ID     = 'cli_aab1ef7c8d785ed4'
 const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
 
 const MEMBERS = [
-  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'AI' },
+  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'BD' },
   { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', team: 'L&D' },
   { name: 'Giang',      open_id: 'ou_placeholder_giang',                  team: 'BD' },
   { name: 'Huyền Linh', open_id: 'ou_placeholder_hlinh',                  team: 'BD' },
@@ -191,8 +191,7 @@ async function renderDashboard(team) {
     const res  = await fetch(`${WORKER_URL}/base-tasks?team=${team}`)
     const data = await res.json()
 
-    const tasks    = data.tasks    || []
-    const subtasks = data.subtasks || []
+    const tasks = data.tasks || []
 
     if (tasks.length === 0) {
       listEl.innerHTML = `<div class="empty-state"><p>chưa có task nào cho team ${team}.</p></div>`
@@ -202,32 +201,18 @@ async function renderDashboard(team) {
       return
     }
 
-    const subMap = {}
-    subtasks.forEach(s => {
-      const f       = s.fields
-      const tguid   = f['task_guid'] || ''
-      if (!subMap[tguid]) subMap[tguid] = []
-      subMap[tguid].push({
-        angle:      f['question']   || '',
-        done:       f['completed']  || false,
-        checked_at: f['checked_at'] || null,
-      })
-    })
-
     const taskList = tasks.map(t => {
       const f = t.fields
       return {
-        guid:        f['task_guid']       || t.record_id,
-        summary:     f['summary']         || '',
-        description: f['description']     || '',
-        assignee:    f['assignee_name']   || '',
-        created_by:  f['created_by']      || '',
-        created_at:  f['created_at']      || '',
-        deadline:    f['deadline']        || '',
-        status:      f['status']          || 'pending',
+        guid:        f['task_guid']     || t.record_id,
+        summary:     f['summary']       || '',
+        description: f['description']   || '',
+        assignee:    f['assignee_name'] || '',
+        created_by:  f['created_by']    || '',
+        created_at:  f['created_at']    || '',
+        deadline:    f['deadline']      || '',
+        status:      f['status']        || 'pending',
         team,
-        subtasks:    subMap[f['task_guid']] || [],
-        claude_suggestion: null,
       }
     })
 
@@ -247,8 +232,6 @@ async function renderDashboard(team) {
 }
 
 function buildTaskCard(task) {
-  const doneCount     = task.subtasks.filter(s => s.done).length
-  const total         = task.subtasks.length
   const deadlineBadge = getDeadlineBadge(task.deadline)
 
   const card = document.createElement('div')
@@ -265,10 +248,6 @@ function buildTaskCard(task) {
           ${deadlineBadge}
         </div>
       </div>
-      <div class="task-progress">
-        <span class="done-count">${doneCount}</span>/${total}
-        <div style="font-size:9px;margin-top:1px;color:var(--muted)">warm-up</div>
-      </div>
       <div class="chevron">▾</div>
     </div>
     <div class="task-detail" id="detail-${task.guid}">
@@ -279,31 +258,15 @@ function buildTaskCard(task) {
 }
 
 function buildTaskDetail(task) {
-  const subtaskHTML = task.subtasks.map(s => `
-    <div class="subtask-row">
-      <div class="subtask-check ${s.done ? 'done' : ''}">${s.done ? '✓' : ''}</div>
-      <span class="subtask-label ${s.done ? 'done' : ''}">${s.angle}</span>
-      ${s.done && s.checked_at ? `<span style="font-size:9px;color:var(--muted);margin-left:auto">${formatDate(s.checked_at)}</span>` : ''}
-    </div>
-  `).join('')
-
-  const claudeHTML = task.claude_suggestion ? `
-    <div class="claude-block">
-      <div class="claude-label">// gợi ý từ claude</div>
-      <div class="claude-text">${task.claude_suggestion}</div>
-    </div>
-  ` : ''
-
   return `
     <div class="detail-sec">
       <div class="detail-label">brief</div>
       <div class="detail-text">${task.description}</div>
     </div>
     <div class="detail-sec">
-      <div class="detail-label">6 câu warm-up</div>
-      <div class="subtask-list">${subtaskHTML}</div>
+      <div class="detail-label">câu hỏi warm-up</div>
+      <div class="detail-text" style="color:var(--muted);font-size:11px">AI đã comment câu hỏi warm-up vào Lark task. Junior mở task trong Lark để xem.</div>
     </div>
-    ${claudeHTML}
   `
 }
 
@@ -421,9 +384,8 @@ function formatDateShort(isoStr) {
 function setSubmitState(loading, step) {
   isSubmitting = loading
   const btn = document.getElementById('btnSubmit')
-  const txt = step === 'subtask' ? 'đang tạo subtask...'
-            : step === 'base'    ? 'đang ghi vào base...'
-            : step === 'suggestion' ? 'đang tạo gợi ý...'
+  const txt = step === 'base'       ? 'đang ghi vào base...'
+            : step === 'suggestion' ? 'AI đang sinh câu hỏi...'
             : loading ? 'đang tạo task...' : 'tạo task →'
   btn.textContent   = txt
   btn.disabled      = loading
@@ -513,58 +475,29 @@ async function submitTask() {
 
     const taskGuid = data.data.task.guid
 
-    // Bước 2: tạo 6 subtask
-    setSubmitState(true, 'subtask')
-    const assigneeId = selectedAssignee.open_id
-    const subtasks = WARMUP_QUESTIONS.map(q => ({
-      summary: q,
-      members: [{ id: assigneeId, type: 'user', role: 'assignee' }],
-    }))
-
-    const subRes  = await fetch(`${WORKER_URL}/create-subtasks`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ task_guid: taskGuid, subtasks }),
-    })
-    const subData = await subRes.json()
-    console.log('[Phase 3] create-subtasks response:', JSON.stringify(subData))
-
-    const subFailed = subData.results
-      ? subData.results.filter(r => !r.data || !r.data.task).length
-      : 1
-
-    // Bước 3: ghi vào Lark Base — dùng team của assignee, không phải currentTeam
+    // Bước 2: ghi vào Lark Base
     setSubmitState(true, 'base')
-    const subtaskList = (subData.results || [])
-      .filter(r => r.data?.task?.guid)
-      .map((r, i) => ({
-        subtask_guid: r.data.task.guid,
-        question:     WARMUP_QUESTIONS[i],
-      }))
-    console.log('[Phase 6] subtaskList to write-to-base:', JSON.stringify(subtaskList))
-
     try {
       const wrRes  = await fetch(`${WORKER_URL}/write-to-base`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          team:          selectedAssignee.team,   // ← team của người được assign, không phải viewer
+          team:          selectedAssignee.team,
           task_guid:     taskGuid,
           summary:       body.summary,
           description:   body.description,
           assignee_name: selectedAssignee.name,
           created_by:    currentUser.name || '(unknown)',
           deadline:      body.due ? new Date(Number(body.due.timestamp)).toISOString() : '',
-          subtasks:      subtaskList,
         }),
       })
       const wrData = await wrRes.json()
-      console.log('[Phase 6] write-to-base response:', JSON.stringify(wrData))
+      console.log('[write-to-base]', JSON.stringify(wrData))
     } catch (e) {
-      console.warn('[Phase 6] write-to-base lỗi:', e.message)
+      console.warn('[write-to-base] lỗi:', e.message)
     }
 
-    // Bước 4: generate suggestion
+    // Bước 3: AI sinh câu hỏi warm-up → comment vào Lark task
     setSubmitState(true, 'suggestion')
     try {
       const sugRes  = await fetch(`${WORKER_URL}/generate-suggestion`, {
@@ -579,12 +512,12 @@ async function submitTask() {
         }),
       })
       const sugData = await sugRes.json()
-      console.log('[Phase 5] generate-suggestion response:', JSON.stringify(sugData))
+      console.log('[generate-suggestion]', JSON.stringify(sugData))
     } catch (e) {
-      console.warn('[Phase 5] generate-suggestion lỗi:', e.message)
+      console.warn('[generate-suggestion] lỗi:', e.message)
     }
 
-    showResult('success', taskGuid, null, subFailed)
+    showResult('success', taskGuid)
 
   } catch (err) {
     showResult('error', null, err.message)
@@ -593,29 +526,19 @@ async function submitTask() {
   }
 }
 
-const WARMUP_QUESTIONS = [
-  'q1 👤 phục vụ ai? — audience: tên cụ thể, vai trò, context user cuối',
-  'q2 🎯 mục đích là gì? — purpose: vì sao cần, kết quả nếu làm đúng',
-  'q3 📦 output trông thế nào? — output: dạng gì, cỡ nào, kênh nào',
-  'q4 ⏰ deadline khi nào? — deadline: cứng/mềm, có milestone giữa chừng không',
-  'q5 🔧 nguồn lực có gì? — resources: người, ngân sách, công cụ',
-  'q6 📊 đào sâu tới đâu? — depth: cần draft approve hướng hay file hoàn chỉnh',
-]
 
-function showResult(type, taskGuid, errMsg, subFailed) {
+
+function showResult(type, taskGuid, errMsg) {
   const panel = document.getElementById('resultPanel')
   panel.style.display = 'block'
 
   if (type === 'success') {
-    const subNote = subFailed === 0
-      ? '6 câu warm-up đã được tạo thành subtask.'
-      : `⚠ ${subFailed}/6 subtask tạo không thành công — kiểm tra lại trong Lark.`
     panel.className = 'result-panel success'
     panel.innerHTML = `
       <div class="result-title">// task đã tạo thành công</div>
       <div class="result-body">
         task guid: <strong>${taskGuid}</strong><br>
-        ${subNote}<br>
+        AI đang sinh câu hỏi warm-up và comment vào Lark task.<br>
         junior sẽ nhận được notification trong Lark.
       </div>
       <button class="btn btn-ghost" style="margin-top:12px;width:auto;padding:8px 14px" onclick="resetForm();toggleCreateForm()">tạo task khác</button>
