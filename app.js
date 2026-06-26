@@ -2,13 +2,14 @@
 //  THINK-BEFORE-ACT — app.js
 //  PHASE 2: Gọi Cloudflare Worker → tạo Lark Task thật
 //  + Debug logs cho Lark SDK (Phase 1 fix)
+//  + Team selector thủ công (fallback khi SDK chưa lấy được user)
 // ============================================================
 
 const APP_ID     = 'cli_aab1ef7c8d785ed4'
 const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
 
 const MEMBERS = [
-  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'AI' },
+  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'BD' },
   { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', team: 'L&D' },
   { name: 'Giang',      open_id: 'ou_placeholder_giang',                  team: 'BD' },
   { name: 'Huyền Linh', open_id: 'ou_placeholder_hlinh',                  team: 'BD' },
@@ -17,7 +18,9 @@ const MEMBERS = [
   { name: 'Hân',        open_id: 'ou_placeholder_han',                    team: 'ACCOUNT' },
 ]
 
+const TEAMS = ['BD', 'PM', 'AI', 'ACCOUNT']
 const TEAM_FALLBACK = 'BD'
+const TEAM_STORAGE_KEY = 'tba_selected_team'
 
 // ─── State ─────────────────────────────────────────────────
 
@@ -32,8 +35,36 @@ let isSubmitting = false
 
 document.addEventListener('DOMContentLoaded', async () => {
   renderMembers()
+  renderTeamSelector()
   await initLark()
 })
+
+// ─── Team selector ──────────────────────────────────────────
+
+function renderTeamSelector() {
+  const sel = document.getElementById('teamSelector')
+  if (!sel) return
+  TEAMS.forEach(t => {
+    const opt = document.createElement('option')
+    opt.value = t
+    opt.textContent = t
+    sel.appendChild(opt)
+  })
+
+  // Restore từ localStorage nếu có
+  const saved = localStorage.getItem(TEAM_STORAGE_KEY)
+  if (saved && TEAMS.includes(saved)) sel.value = saved
+
+  sel.addEventListener('change', () => {
+    localStorage.setItem(TEAM_STORAGE_KEY, sel.value)
+    setTeam(sel.value)
+  })
+}
+
+function syncTeamSelector(team) {
+  const sel = document.getElementById('teamSelector')
+  if (sel && TEAMS.includes(team)) sel.value = team
+}
 
 // ─── Lark SDK ──────────────────────────────────────────────
 
@@ -47,7 +78,9 @@ async function initLark() {
     isInLark = false
     nameEl.textContent = '(ngoài Lark)'
     nameEl.classList.remove('loading')
-    setTeam(TEAM_FALLBACK)
+    // Dùng team đã lưu hoặc fallback
+    const saved = localStorage.getItem(TEAM_STORAGE_KEY)
+    setTeam(saved && TEAMS.includes(saved) ? saved : TEAM_FALLBACK)
     return
   }
 
@@ -99,7 +132,6 @@ async function initLark() {
   } catch (e) {
     console.error('[Lark SDK] init exception:', e.message)
     fallbackUser(nameEl)
-    setTeam(TEAM_FALLBACK)
   }
 }
 
@@ -111,14 +143,23 @@ function updateHeaderUser(nameEl, avatarEl) {
 function fallbackUser(nameEl) {
   nameEl.textContent = '(không lấy được tên)'
   nameEl.classList.remove('loading')
-  setTeam(TEAM_FALLBACK)
+  const saved = localStorage.getItem(TEAM_STORAGE_KEY)
+  setTeam(saved && TEAMS.includes(saved) ? saved : TEAM_FALLBACK)
 }
 
 function resolveUserTeam() {
   const match = MEMBERS.find(m => m.open_id === currentUser.open_id)
-  currentUser.team = match ? match.team : TEAM_FALLBACK
-  console.log('[Lark SDK] resolved team:', currentUser.team, 'matched member:', !!match)
-  setTeam(currentUser.team)
+  if (match) {
+    // SDK lấy được user thật → dùng team từ MEMBERS, sync selector
+    currentUser.team = match.team
+    console.log('[Lark SDK] resolved team:', currentUser.team, '— matched member:', match.name)
+    setTeam(currentUser.team)
+  } else {
+    // Không match (open_id placeholder) → giữ team đang chọn trên selector
+    console.warn('[Lark SDK] open_id không match member nào — giữ team hiện tại')
+    const saved = localStorage.getItem(TEAM_STORAGE_KEY)
+    setTeam(saved && TEAMS.includes(saved) ? saved : TEAM_FALLBACK)
+  }
 }
 
 // ─── Set team + render dashboard ───────────────────────────
@@ -128,6 +169,7 @@ function setTeam(team) {
   const labelEl = document.getElementById('teamLabel')
   labelEl.textContent = 'team: ' + team
   labelEl.classList.remove('loading')
+  syncTeamSelector(team)
   renderDashboard(team)
 }
 
@@ -295,15 +337,15 @@ function toggleCreateForm() {
 }
 
 function resetForm() {
-  document.getElementById('f-summary').value    = ''
+  document.getElementById('f-summary').value     = ''
   document.getElementById('f-description').value = ''
-  document.getElementById('f-output').value       = ''
-  document.getElementById('f-start').value      = ''
-  document.getElementById('f-due').value        = ''
-  document.getElementById('f-allday').checked   = false
-  document.getElementById('f-reminder').value   = ''
-  document.getElementById('f-repeat').value     = ''
-  document.getElementById('f-tasklist').value   = ''
+  document.getElementById('f-output').value      = ''
+  document.getElementById('f-start').value       = ''
+  document.getElementById('f-due').value         = ''
+  document.getElementById('f-allday').checked    = false
+  document.getElementById('f-reminder').value    = ''
+  document.getElementById('f-repeat').value      = ''
+  document.getElementById('f-tasklist').value    = ''
   document.getElementById('resultPanel').style.display = 'none'
   selectedAssignee  = null
   selectedFollowers = []
@@ -375,7 +417,10 @@ function formatDateShort(isoStr) {
 function setSubmitState(loading, step) {
   isSubmitting = loading
   const btn = document.getElementById('btnSubmit')
-  const txt = step === 'subtask' ? 'đang tạo subtask...' : step === 'base' ? 'đang ghi vào base...' : step === 'suggestion' ? 'đang tạo gợi ý...' : loading ? 'đang tạo task...' : 'tạo task →'
+  const txt = step === 'subtask' ? 'đang tạo subtask...'
+            : step === 'base'    ? 'đang ghi vào base...'
+            : step === 'suggestion' ? 'đang tạo gợi ý...'
+            : loading ? 'đang tạo task...' : 'tạo task →'
   btn.textContent   = txt
   btn.disabled      = loading
   btn.style.opacity = loading ? '.6' : '1'
@@ -411,7 +456,6 @@ function buildTaskBody() {
     const dueTs = toTimestampMs(dueVal)
     if (dueTs) body.due = { timestamp: dueTs, is_all_day: isAllDay }
   }
-
   if (startVal) {
     const startTs = toTimestampMs(startVal)
     if (startTs) body.start = { timestamp: startTs, is_all_day: isAllDay }
@@ -436,7 +480,7 @@ function validate() {
   return !!(summary && desc && output && selectedAssignee)
 }
 
-// ─── Submit → gọi Worker thật ───────────────────────────────
+// ─── Submit ─────────────────────────────────────────────────
 
 async function submitTask() {
   if (isSubmitting) return
@@ -485,7 +529,7 @@ async function submitTask() {
       ? subData.results.filter(r => !r.data || !r.data.task).length
       : 1
 
-    // Bước 3: ghi vào Lark Base
+    // Bước 3: ghi vào Lark Base — dùng team của assignee, không phải currentTeam
     setSubmitState(true, 'base')
     const subtaskList = (subData.results || [])
       .filter(r => r.data?.task?.guid)
@@ -500,7 +544,7 @@ async function submitTask() {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          team:          currentTeam || selectedAssignee.team,
+          team:          selectedAssignee.team,   // ← team của người được assign, không phải viewer
           task_guid:     taskGuid,
           summary:       body.summary,
           description:   body.description,
@@ -516,7 +560,7 @@ async function submitTask() {
       console.warn('[Phase 6] write-to-base lỗi:', e.message)
     }
 
-    // Bước 4: generate suggestion + post comment
+    // Bước 4: generate suggestion
     setSubmitState(true, 'suggestion')
     try {
       const sugRes  = await fetch(`${WORKER_URL}/generate-suggestion`, {
