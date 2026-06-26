@@ -722,7 +722,7 @@ async function submitTask() {
       console.warn('[write-to-base] lỗi:', e.message)
     }
 
-    // Bước 3: AI sinh câu hỏi warm-up → comment vào Lark task
+    // Bước 3: AI vào Lark Base đọc task + history + skill → sinh câu hỏi → PATCH vào description Lark Task
     setSubmitState(true, 'suggestion')
     try {
       const sugRes  = await fetch(`${WORKER_URL}/generate-suggestion`, {
@@ -730,8 +730,6 @@ async function submitTask() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           task_guid:        taskGuid,
-          summary:          body.summary,
-          description:      body.description,
           assignee_open_id: selectedAssignee.open_id,
           assignee_team:    selectedAssignee.team,
         }),
