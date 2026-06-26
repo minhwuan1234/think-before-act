@@ -65,6 +65,237 @@ function renderTeamSelector() {
   })
 }
 
+// ─── Nav tabs ──────────────────────────────────────────────
+
+function switchView(viewName) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'))
+  document.getElementById('view-' + viewName).classList.add('active')
+  document.querySelector(`.nav-tab[data-view="${viewName}"]`).classList.add('active')
+
+  if (viewName === 'members') renderMembersView()
+}
+
+function renderMembersView() {
+  const grid = document.getElementById('memberGrid')
+  grid.innerHTML = MEMBERS.map(m => `
+    <div class="member-card" onclick="openMemberProfile('${m.open_id}','${m.name.replace(/'/g, "\\'")}')">
+      <div class="member-card-name">${m.name}</div>
+      <div class="member-card-teams">
+        ${m.teams.map(t => `<span class="member-card-team">${t}</span>`).join('')}
+      </div>
+      <div class="member-card-id">${m.open_id.startsWith('ou_placeholder') ? '⚠ chưa có open_id thật' : m.open_id}</div>
+    </div>
+  `).join('')
+}
+
+// ─── Side panel: Member profile ────────────────────────────
+
+async function openMemberProfile(openId, name) {
+  const panel   = document.getElementById('sidePanel')
+  const overlay = document.getElementById('sidePanelOverlay')
+  panel.innerHTML = `
+    <div class="side-head">
+      <div>
+        <div class="side-name">${name}</div>
+        <div class="side-id">đang tải profile...</div>
+      </div>
+      <button class="side-close" onclick="closeMemberProfile()">×</button>
+    </div>
+    <div style="padding:40px 0;text-align:center;color:var(--muted);font-size:11px">⏳ pulling data từ Lark Base...</div>
+  `
+  panel.classList.add('open')
+  overlay.classList.add('open')
+
+  if (openId.startsWith('ou_placeholder')) {
+    panel.innerHTML = `
+      <div class="side-head">
+        <div>
+          <div class="side-name">${name}</div>
+          <div class="side-id">⚠ chưa có open_id thật</div>
+        </div>
+        <button class="side-close" onclick="closeMemberProfile()">×</button>
+      </div>
+      <div style="padding:24px 0;color:var(--amber);font-size:12px">Member này đang dùng placeholder open_id — chưa thể pull profile. Cần lấy open_id thật từ Lark Contact API trước.</div>
+    `
+    return
+  }
+
+  try {
+    const res  = await fetch(`${WORKER_URL}/member-profile?open_id=${encodeURIComponent(openId)}`)
+    const data = await res.json()
+    renderMemberProfile(name, openId, data)
+  } catch (err) {
+    panel.innerHTML = `
+      <div class="side-head">
+        <div><div class="side-name">${name}</div></div>
+        <button class="side-close" onclick="closeMemberProfile()">×</button>
+      </div>
+      <div style="color:var(--red);font-size:12px">Lỗi tải profile: ${err.message}</div>
+    `
+  }
+}
+
+function renderMemberProfile(name, openId, data) {
+  const panel = document.getElementById('sidePanel')
+  const p     = data.patterns || {}
+  const s     = p.summary || { total: 0, done: 0, pending: 0, overdue: 0 }
+  const teamCounts = data.team_counts || {}
+  const tasks = data.tasks || []
+
+  // Summary grid
+  const summaryHTML = `
+    <div class="summary-grid">
+      <div class="summary-cell"><div class="summary-num">${s.total}</div><div class="summary-lbl">tổng</div></div>
+      <div class="summary-cell"><div class="summary-num" style="color:var(--green)">${s.done}</div><div class="summary-lbl">done</div></div>
+      <div class="summary-cell ${s.pending > 5 ? 'warn' : ''}"><div class="summary-num">${s.pending}</div><div class="summary-lbl">pending</div></div>
+      <div class="summary-cell ${s.overdue > 0 ? 'bad' : ''}"><div class="summary-num">${s.overdue}</div><div class="summary-lbl">quá hạn</div></div>
+    </div>
+  `
+
+  // Pattern insights
+  let patternHTML = ''
+  if (p.brief_quality) {
+    const bq = p.brief_quality
+    const shortPct = s.total > 0 ? Math.round(bq.short_count / s.total * 100) : 0
+    patternHTML += `
+      <div class="pattern-sec">
+        <div class="pattern-title">📝 brief quality</div>
+        <div class="pattern-list">
+          ${bq.short_count > 0
+            ? `<span class="pattern-warn">⚠</span> <strong>${bq.short_count}/${s.total}</strong> task có brief &lt; 50 ký tự (${shortPct}%)`
+            : `<span class="pattern-good">✓</span> Tất cả brief đều đủ dài`}<br>
+          Brief trung bình: <strong>${bq.avg_length}</strong> ký tự
+        </div>
+      </div>
+    `
+  }
+
+  if (p.deadline && p.deadline.with_deadline > 0) {
+    const d = p.deadline
+    const onTimePct = d.with_deadline > 0 ? Math.round(d.on_time / d.with_deadline * 100) : 0
+    patternHTML += `
+      <div class="pattern-sec">
+        <div class="pattern-title">⏰ deadline</div>
+        <div class="pattern-list">
+          ${onTimePct >= 70
+            ? `<span class="pattern-good">✓</span> <strong>${d.on_time}/${d.with_deadline}</strong> đúng hạn (${onTimePct}%)`
+            : `<span class="pattern-warn">⚠</span> <strong>${d.on_time}/${d.with_deadline}</strong> đúng hạn (${onTimePct}%)`}
+          ${d.missed > 0 ? `<br><span class="pattern-warn">⚠</span> <strong>${d.missed}</strong> task đang quá hạn` : ''}
+          ${d.overdue_streak >= 2 ? `<br><span class="pattern-warn">⚠</span> Streak quá hạn: <strong>${d.overdue_streak}</strong> task liên tiếp` : ''}
+        </div>
+      </div>
+    `
+  }
+
+  if (p.status) {
+    const st = p.status
+    patternHTML += `
+      <div class="pattern-sec">
+        <div class="pattern-title">📊 status</div>
+        <div class="pattern-list">
+          ${st.stuck_count > 0
+            ? `<span class="pattern-warn">⚠</span> <strong>${st.stuck_count}</strong> task stuck &gt; 7 ngày`
+            : `<span class="pattern-good">✓</span> Không có task stuck quá lâu`}
+          ${st.longest_stuck_days > 0 ? `<br>Lâu nhất: <strong>${st.longest_stuck_days} ngày</strong> — "${st.longest_stuck_name || '(không tên)'}"` : ''}
+        </div>
+      </div>
+    `
+  }
+
+  if (p.workload) {
+    patternHTML += `
+      <div class="pattern-sec">
+        <div class="pattern-title">💼 workload</div>
+        <div class="pattern-list">
+          <strong>${p.workload.active_count}</strong> task active hiện tại
+        </div>
+      </div>
+    `
+  }
+
+  // Team distribution
+  const teamHTML = Object.keys(teamCounts).length > 0
+    ? `<div class="pattern-sec">
+         <div class="pattern-title">📂 phân bố theo team</div>
+         <div class="pattern-list">
+           ${Object.entries(teamCounts).map(([t, c]) => `<strong>${t}</strong>: ${c} task`).join(' • ')}
+         </div>
+       </div>`
+    : ''
+
+  // History task list
+  const sortedTasks = [...tasks].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+  const historyHTML = sortedTasks.length > 0
+    ? sortedTasks.map((t, i) => {
+        const guid = t.task_guid || `idx-${i}`
+        const deadlineBadge = t.deadline
+          ? `<span>deadline: ${formatDateShort(t.deadline)}</span>`
+          : ''
+        return `
+          <div class="history-task">
+            <div class="history-row" onclick="toggleHistoryDetail('${guid}')">
+              <div class="history-dot ${t.status === 'done' ? 'done' : t.status === 'in-progress' ? 'in-progress' : ''}"></div>
+              <div class="history-main">
+                <div class="history-name">${t.summary || '(không tên)'}</div>
+                <div class="history-meta">
+                  <span>${t.status}</span>
+                  ${t.created_at ? `<span>tạo: ${formatDateShort(t.created_at)}</span>` : ''}
+                  ${deadlineBadge}
+                </div>
+              </div>
+              <span class="history-team-badge">${t.team}</span>
+            </div>
+            <div class="history-expand" id="hist-${guid}">
+              <div class="history-detail-label">brief</div>
+              <div class="history-detail-text">${(t.description || '(không có brief)').replace(/</g, '&lt;')}</div>
+              <div class="history-detail-label">metadata</div>
+              <div class="history-detail-text">team: ${t.team} • status: ${t.status} • task_guid: ${t.task_guid || '—'}</div>
+            </div>
+          </div>
+        `
+      }).join('')
+    : `<div style="padding:24px;text-align:center;color:var(--muted);font-size:11px">Chưa có task nào</div>`
+
+  panel.innerHTML = `
+    <div class="side-head">
+      <div>
+        <div class="side-name">${name}</div>
+        <div class="side-id">${openId}</div>
+      </div>
+      <button class="side-close" onclick="closeMemberProfile()">×</button>
+    </div>
+
+    ${summaryHTML}
+    ${patternHTML}
+    ${teamHTML}
+
+    <div class="pattern-sec">
+      <div class="pattern-title">📋 lịch sử task (${tasks.length})</div>
+      ${historyHTML}
+    </div>
+  `
+}
+
+function toggleHistoryDetail(guid) {
+  const el = document.getElementById('hist-' + guid)
+  if (el) el.classList.toggle('open')
+}
+
+function openMemberByName(name) {
+  const m = MEMBERS.find(x => x.name === name)
+  if (!m) {
+    alert('Không tìm thấy member "' + name + '" trong danh sách.')
+    return
+  }
+  openMemberProfile(m.open_id, m.name)
+}
+
+function closeMemberProfile() {
+  document.getElementById('sidePanel').classList.remove('open')
+  document.getElementById('sidePanelOverlay').classList.remove('open')
+}
+
 function syncTeamSelector(team) {
   const sel = document.getElementById('teamSelector')
   if (sel && TEAMS.includes(team)) sel.value = team
@@ -325,7 +556,7 @@ function buildRiskPanel(tasks) {
       <div class="risk-dot risk-dot-${r.level}"></div>
       <div class="risk-info">
         <div class="risk-name">${r.task.summary || '(không tên)'}</div>
-        <div class="risk-assignee">→ ${r.task.assignee}</div>
+        <div class="risk-assignee">→ <span class="assignee-link" onclick="event.stopPropagation(); openMemberByName('${r.task.assignee.replace(/'/g, "\\'")}')">${r.task.assignee}</span></div>
         <div class="risk-reason">${r.reason}</div>
       </div>
     </div>
@@ -370,7 +601,7 @@ function buildTaskCard(task) {
       <div class="task-main">
         <div class="task-name">${task.summary}</div>
         <div class="task-meta">
-          <span>→ ${task.assignee}</span>
+          <span>→ <span class="assignee-link" onclick="event.stopPropagation(); openMemberByName('${task.assignee.replace(/'/g, "\\'")}')">${task.assignee}</span></span>
           <span>by ${task.created_by}</span>
           ${deadlineBadge}
         </div>
