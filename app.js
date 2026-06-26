@@ -320,21 +320,24 @@ function buildRiskPanel(tasks) {
   if (deduped.length === 0) return ''
 
   const rows = deduped.map(r => `
-    <div class="risk-row risk-${r.level}" onclick="highlightTask('${r.task.guid}')">
+    <div class="risk-row" onclick="highlightTask('${r.task.guid}')">
       <div class="risk-dot risk-dot-${r.level}"></div>
       <div class="risk-info">
-        <span class="risk-name">${r.task.summary || '(không tên)'}</span>
-        <span class="risk-assignee">→ ${r.task.assignee}</span>
+        <div class="risk-name">${r.task.summary || '(không tên)'}</div>
+        <div class="risk-assignee">→ ${r.task.assignee}</div>
+        <div class="risk-reason">${r.reason}</div>
       </div>
-      <div class="risk-reason">${r.reason}</div>
     </div>
   `).join('')
 
   return `
-    <div class="risk-panel">
-      <div class="risk-header">
+    <div class="risk-panel" id="riskPanelInner">
+      <div class="risk-header" onclick="toggleRiskPanel()">
         <span class="risk-title">⚠ cần chú ý</span>
-        <span class="risk-count">${deduped.length}</span>
+        <div class="risk-header-right">
+          <span class="risk-count">${deduped.length}</span>
+          <span class="risk-chevron">▾</span>
+        </div>
       </div>
       <div class="risk-list">${rows}</div>
     </div>
@@ -342,12 +345,16 @@ function buildRiskPanel(tasks) {
 }
 
 function highlightTask(guid) {
-  // Scroll đến task card + flash highlight
   const card = document.querySelector(`.task-card[data-guid="${guid}"]`)
   if (!card) return
   card.scrollIntoView({ behavior: 'smooth', block: 'center' })
   card.classList.add('highlight')
   setTimeout(() => card.classList.remove('highlight'), 2000)
+}
+
+function toggleRiskPanel() {
+  const panel = document.getElementById('riskPanelInner')
+  if (panel) panel.classList.toggle('collapsed')
 }
 
 function buildTaskCard(task) {
