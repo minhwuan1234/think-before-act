@@ -334,6 +334,58 @@
     .result-panel.success .result-title { color: var(--green); }
     .result-panel.error   .result-title { color: var(--red); }
     .result-body { font-size: 12px; line-height: 1.7; }
+
+    /* Risk panel */
+    .risk-panel {
+      border: 1px solid var(--amber-bd);
+      background: var(--amber-bg);
+      margin-bottom: 24px;
+    }
+    .risk-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--amber-bd);
+    }
+    .risk-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--amber);
+    }
+    .risk-count {
+      font-size: 11px; font-weight: 700; color: var(--amber);
+      background: var(--amber-bd); padding: 1px 7px;
+    }
+    .risk-list { display: flex; flex-direction: column; }
+    .risk-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--amber-bd);
+      cursor: pointer; transition: background .15s;
+    }
+    .risk-row:last-child { border-bottom: none; }
+    .risk-row:hover { background: #fff8e7; }
+    .risk-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .risk-dot-red   { background: var(--red); }
+    .risk-dot-amber { background: var(--amber); }
+    .risk-info {
+      flex: 1; min-width: 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .risk-name {
+      font-size: 12px; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 200px;
+    }
+    .risk-assignee { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+    .risk-reason   { font-size: 11px; color: var(--amber); flex-shrink: 0; text-align: right; }
+
+    /* Highlight khi click từ risk panel */
+    .task-card.highlight {
+      border-color: var(--amber) !important;
+      background: var(--amber-bg);
+      transition: background .3s, border-color .3s;
+    }
   </style>
 </head>
 <body>
@@ -361,6 +413,8 @@
     </div>
 
     <div class="team-label loading" id="teamLabel">đang xác định team...</div>
+
+    <div id="riskPanel"></div>
 
     <div class="stats-row" id="statsRow">
       <div class="stat-box">
