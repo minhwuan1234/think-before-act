@@ -432,6 +432,47 @@
       background: var(--amber-bg);
       transition: background .3s, border-color .3s;
     }
+
+    /* Brief check panel */
+    .check-panel {
+      border: 1px solid var(--border);
+      padding: 16px;
+      margin-top: 12px;
+      display: none;
+    }
+    .check-panel.open { display: block; }
+    .check-panel.pass { border-color: var(--green-bd); background: var(--green-bg); }
+    .check-panel.fail { border-color: var(--amber-bd); background: var(--amber-bg); }
+
+    .check-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .check-header .score { font-size: 13px; letter-spacing: 0; }
+    .check-header .score.pass { color: var(--green); }
+    .check-header .score.fail { color: var(--amber); }
+
+    .check-list { display: flex; flex-direction: column; gap: 8px; }
+    .check-row { display: flex; align-items: flex-start; gap: 10px; font-size: 12px; }
+    .check-icon {
+      width: 16px; height: 16px; border: 1px solid;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
+    }
+    .check-icon.pass { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+    .check-icon.fail { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+    .check-body { flex: 1; min-width: 0; }
+    .check-item   { font-weight: 500; }
+    .check-suggest { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .check-history {
+      margin-top: 14px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 11px; color: var(--muted);
+    }
+    .check-history strong { color: var(--text); }
   </style>
 </head>
 <body>
@@ -572,9 +613,12 @@
       </div>
 
       <div class="form-actions">
+        <button class="btn btn-ghost" id="btnCheckBrief" onclick="checkBrief()">↻ check brief</button>
         <button class="btn btn-dark" id="btnSubmit" onclick="submitTask()">tạo task →</button>
         <button class="btn btn-ghost" onclick="toggleCreateForm()">huỷ</button>
       </div>
+
+      <div class="check-panel" id="checkPanel"></div>
 
       <div class="result-panel" id="resultPanel" style="display:none;"></div>
 
