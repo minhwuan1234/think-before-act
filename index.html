@@ -1,7 +1,480 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+  <meta charset="UTF-8">a<!DOCTYPE html>
+<html lang="vi">
+<head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>think-before-act</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:         #f9f9f8;
+      --text:       #111110;
+      --muted:      #888882;
+      --border:     #ddddd8;
+      --accent:     #4338ca;
+      --accent-bg:  #eef2ff;
+      --amber:      #92400e;
+      --amber-bg:   #fffbeb;
+      --amber-bd:   #fcd34d;
+      --green:      #166534;
+      --green-bg:   #f0fdf4;
+      --green-bd:   #86efac;
+      --red:        #991b1b;
+      --red-bg:     #fef2f2;
+      --red-bd:     #fca5a5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .hdr {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      height: 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+    }
+    .hdr-logo { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .hdr-right { display: flex; align-items: center; gap: 12px; }
+    .hdr-user  { display: flex; align-items: center; gap: 8px; }
+    .hdr-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 1px solid var(--border); object-fit: cover; display: none;
+    }
+    .hdr-name { font-size: 11px; color: var(--muted); }
+    .hdr-name.loading { opacity: .5; }
+
+    /* Team selector */
+    .team-selector-wrap {
+      display: flex; align-items: center; gap: 6px;
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+    }
+    .team-selector-wrap label {
+      font-size: 10px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      white-space: nowrap;
+    }
+    .team-selector-wrap select {
+      font-family: inherit; font-size: 11px; font-weight: 700;
+      background: transparent; border: none;
+      color: var(--accent); cursor: pointer;
+      outline: none; padding: 0;
+    }
+
+    main { max-width: 680px; margin: 0 auto; padding: 0 20px 80px; }
+
+    .dash-head {
+      padding: 32px 0 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .dash-head h1 { font-size: 18px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 4px; }
+    .dash-head p  { font-size: 11px; color: var(--muted); }
+
+    .team-label {
+      font-size: 10px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--accent);
+      background: var(--accent-bg);
+      border: 1px solid var(--accent);
+      padding: 3px 8px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    .team-label.loading { color: var(--muted); background: transparent; border-color: var(--border); }
+
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .stat-box { background: var(--bg); padding: 14px 16px; }
+    .stat-num { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
+    .stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+    .create-toggle {
+      width: 100%;
+      font-family: inherit; font-size: 12px;
+      border: 1px dashed var(--border);
+      background: transparent;
+      color: var(--muted);
+      padding: 12px 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: all .15s;
+      margin-bottom: 24px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .create-toggle:hover { border-color: var(--text); color: var(--text); }
+    .create-toggle.open  { border-color: var(--accent); color: var(--accent); border-style: solid; }
+    .create-toggle .icon { font-size: 14px; line-height: 1; }
+
+    .create-section {
+      display: none;
+      border: 1px solid var(--accent);
+      padding: 24px;
+      margin-top: -24px;
+      margin-bottom: 24px;
+    }
+    .create-section.open { display: block; }
+
+    .form-sec { margin-bottom: 28px; }
+    .sec-title {
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 8px; margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .field { margin-bottom: 16px; }
+    .field-label { font-size: 11px; font-weight: 700; display: block; margin-bottom: 6px; }
+    .field-label .req { color: var(--red); }
+    .field-hint { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+    input[type="text"], input[type="date"], input[type="datetime-local"],
+    input[type="number"], textarea, select {
+      width: 100%;
+      font-family: inherit; font-size: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none; resize: none;
+      transition: border-color .15s;
+      line-height: 1.6;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    select { cursor: pointer; }
+
+    /* Override select trong form (không phải team-selector) */
+    .form-sec select { color: var(--text); font-weight: 400; }
+
+    .toggle-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; cursor: pointer; width: fit-content;
+    }
+    .toggle-row input { accent-color: var(--accent); width: auto; }
+
+    .member-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .member-chip {
+      font-size: 11px; padding: 5px 10px;
+      border: 1px solid var(--border); cursor: pointer;
+      transition: all .15s; user-select: none;
+    }
+    .member-chip:hover { border-color: var(--text); }
+    .member-chip.selected {
+      border-color: var(--accent); background: var(--accent-bg); color: var(--accent);
+    }
+
+    .adv-toggle {
+      background: none; border: none; font-family: inherit; font-size: 11px;
+      color: var(--muted); cursor: pointer; text-decoration: underline;
+      text-underline-offset: 3px; padding: 0; margin-bottom: 16px;
+    }
+    .adv-toggle:hover { color: var(--text); }
+    .adv-section { display: none; }
+    .adv-section.open { display: block; }
+
+    .btn {
+      font-family: inherit; font-size: 12px;
+      cursor: pointer; border: 1px solid; transition: opacity .15s;
+      padding: 11px 16px; display: inline-block; text-align: center;
+    }
+    .btn-dark  { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .btn-dark:hover { opacity: .75; }
+    .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+    .form-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .form-actions .btn-dark { flex: 1; }
+
+    .err { font-size: 11px; color: var(--red); margin-top: 6px; display: none; }
+    .err.show { display: block; }
+
+    .sec-divider {
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .sec-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .task-list { display: flex; flex-direction: column; gap: 0; }
+
+    .task-card {
+      border: 1px solid var(--border);
+      border-top: none;
+      transition: border-color .15s;
+    }
+    .task-card:first-child { border-top: 1px solid var(--border); }
+    .task-card:hover { border-color: var(--text); }
+    .task-card:hover + .task-card { border-top-color: var(--text); }
+
+    .task-row {
+      padding: 14px 16px;
+      display: flex; align-items: flex-start; gap: 12px;
+      cursor: pointer;
+    }
+
+    .task-status {
+      width: 8px; height: 8px; border-radius: 50%;
+      border: 1.5px solid var(--muted);
+      flex-shrink: 0; margin-top: 5px;
+    }
+    .task-status.done        { background: var(--green);   border-color: var(--green); }
+    .task-status.in-progress { background: var(--amber-bd); border-color: var(--amber); }
+
+    .task-main { flex: 1; min-width: 0; }
+    .task-name {
+      font-size: 13px; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .task-meta {
+      font-size: 10px; color: var(--muted); margin-top: 3px;
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+
+    .task-progress {
+      font-size: 10px; color: var(--muted);
+      flex-shrink: 0; text-align: right; padding-top: 2px;
+    }
+    .task-progress .done-count { color: var(--green); font-weight: 700; }
+
+    .task-detail {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 16px;
+      background: #fafafa;
+    }
+    .task-detail.open { display: block; }
+
+    .detail-sec { margin-bottom: 16px; }
+    .detail-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--muted); margin-bottom: 6px;
+    }
+    .detail-text {
+      font-size: 12px; line-height: 1.7; color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .subtask-list { display: flex; flex-direction: column; gap: 6px; }
+    .subtask-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 11px;
+    }
+    .subtask-check {
+      width: 14px; height: 14px; border: 1px solid var(--border);
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 9px;
+    }
+    .subtask-check.done { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
+    .subtask-label { color: var(--text); }
+    .subtask-label.done { color: var(--muted); text-decoration: line-through; }
+
+    .claude-block {
+      border: 1px solid var(--accent);
+      background: var(--accent-bg);
+      padding: 12px 14px;
+      margin-top: 16px;
+    }
+    .claude-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--accent); margin-bottom: 6px;
+    }
+    .claude-text { font-size: 11px; line-height: 1.7; color: var(--text); }
+
+    .deadline-badge {
+      font-size: 10px; padding: 2px 6px;
+      border: 1px solid;
+    }
+    .deadline-badge.overdue { color: var(--red);   border-color: var(--red-bd);   background: var(--red-bg); }
+    .deadline-badge.soon    { color: var(--amber);  border-color: var(--amber-bd); background: var(--amber-bg); }
+    .deadline-badge.ok      { color: var(--muted);  border-color: var(--border); }
+
+    .empty-state {
+      padding: 40px 0; text-align: center;
+      border: 1px dashed var(--border);
+    }
+    .empty-state p { font-size: 12px; color: var(--muted); }
+
+    .chevron {
+      font-size: 10px; color: var(--muted);
+      flex-shrink: 0; transition: transform .15s;
+      margin-top: 3px;
+    }
+    .task-card.open .chevron { transform: rotate(180deg); }
+
+    .result-panel { margin-top: 16px; padding: 14px; border: 1px solid; }
+    .result-panel.success { border-color: var(--green-bd); background: var(--green-bg); }
+    .result-panel.error   { border-color: var(--red-bd);   background: var(--red-bg); }
+    .result-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; margin-bottom: 8px;
+    }
+    .result-panel.success .result-title { color: var(--green); }
+    .result-panel.error   .result-title { color: var(--red); }
+    .result-body { font-size: 12px; line-height: 1.7; }
+  </style>
+</head>
+<body>
+
+  <header class="hdr">
+    <span class="hdr-logo">// think-before-act</span>
+    <div class="hdr-right">
+      <a href="skills.html" style="font-size:11px;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:4px 10px;transition:all .15s" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--text)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">skills</a>
+      <!-- Team selector thủ công — override khi SDK chưa lấy được user -->
+      <div class="team-selector-wrap">
+        <label for="teamSelector">team</label>
+        <select id="teamSelector"></select>
+      </div>
+      <div class="hdr-user">
+        <img class="hdr-avatar" id="userAvatar" alt="avatar">
+        <span class="hdr-name loading" id="nameDisplay">đang tải...</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="dash-head">
+      <h1>dashboard.</h1>
+      <p>theo dõi task và warm-up progress của team.</p>
+    </div>
+
+    <div class="team-label loading" id="teamLabel">đang xác định team...</div>
+
+    <div class="stats-row" id="statsRow">
+      <div class="stat-box">
+        <div class="stat-num" id="stat-total">—</div>
+        <div class="stat-lbl">tổng task</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-pending">—</div>
+        <div class="stat-lbl">đang chờ</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-done">—</div>
+        <div class="stat-lbl">hoàn thành</div>
+      </div>
+    </div>
+
+    <button class="create-toggle" id="createToggle" onclick="toggleCreateForm()">
+      <span class="icon">+</span>
+      <span>tạo task mới</span>
+    </button>
+
+    <div class="create-section" id="createSection">
+
+      <div class="form-sec">
+        <div class="sec-title">thông tin cơ bản</div>
+
+        <div class="field">
+          <label class="field-label">tên task <span class="req">*</span></label>
+          <input type="text" id="f-summary" placeholder="vd: làm video onboarding cho fresher">
+          <div class="err" id="err-summary">⚠ cần điền tên task</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">brief / mô tả <span class="req">*</span></label>
+          <textarea id="f-description" rows="5" placeholder="mô tả task càng rõ càng tốt — bối cảnh, yêu cầu, kỳ vọng..."></textarea>
+          <div class="err" id="err-description">⚠ cần điền brief</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">output kỳ vọng <span class="req">*</span></label>
+          <textarea id="f-output" rows="3" placeholder="vd: file mp4 + script hoàn chỉnh, gửi qua Drive trước deadline"></textarea>
+          <div class="field-hint">mô tả rõ deliverable — junior sẽ thấy ngay trong task Lark</div>
+          <div class="err" id="err-output">⚠ cần điền output kỳ vọng</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">người nhận task <span class="req">*</span></label>
+          <div class="member-list" id="assigneeList"></div>
+          <div class="field-hint">chọn 1 người sẽ làm task này</div>
+          <div class="err" id="err-assignee">⚠ chọn người nhận task</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">người theo dõi</label>
+          <div class="member-list" id="followerList"></div>
+          <div class="field-hint">(tuỳ chọn) người muốn theo dõi tiến độ</div>
+        </div>
+      </div>
+
+      <div class="form-sec">
+        <div class="sec-title">thời gian</div>
+
+        <div class="field">
+          <label class="field-label">ngày bắt đầu</label>
+          <input type="datetime-local" id="f-start">
+        </div>
+
+        <div class="field">
+          <label class="field-label">deadline</label>
+          <input type="datetime-local" id="f-due">
+          <label class="toggle-row" style="margin-top:10px;">
+            <input type="checkbox" id="f-allday">
+            <span>cả ngày (không cần giờ cụ thể)</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label class="field-label">nhắc trước (phút)</label>
+          <input type="number" id="f-reminder" placeholder="vd: 30" min="0">
+          <div class="field-hint">để trống nếu không cần nhắc</div>
+        </div>
+      </div>
+
+      <button class="adv-toggle" onclick="toggleAdvanced()">+ tuỳ chọn nâng cao</button>
+      <div class="adv-section" id="advSection">
+        <div class="form-sec">
+          <div class="field">
+            <label class="field-label">lặp lại</label>
+            <select id="f-repeat">
+              <option value="">không lặp</option>
+              <option value="FREQ=DAILY">hàng ngày</option>
+              <option value="FREQ=WEEKLY">hàng tuần</option>
+              <option value="FREQ=MONTHLY">hàng tháng</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">tasklist GUID</label>
+            <input type="text" id="f-tasklist" placeholder="(tuỳ chọn) gắn task vào tasklist nào">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-dark" id="btnSubmit" onclick="submitTask()">tạo task →</button>
+        <button class="btn btn-ghost" onclick="toggleCreateForm()">huỷ</button>
+      </div>
+
+      <div class="result-panel" id="resultPanel" style="display:none;"></div>
+
+    </div>
+
+    <div class="sec-divider">danh sách task</div>
+    <div class="task-list" id="taskList"></div>
+
+  </main>
+
+  <script src="https://lf-lark-suite-open-cdn.feishu.cn/obj/feishu-static/lark/web-app-sdk/jssdk-1.5.13.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>think-before-act</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
