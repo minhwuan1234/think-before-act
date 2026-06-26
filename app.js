@@ -9,13 +9,13 @@ const APP_ID     = 'cli_aab1ef7c8d785ed4'
 const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
 
 const MEMBERS = [
-  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', team: 'BD' },
-  { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', team: 'L&D' },
-  { name: 'Giang',      open_id: 'ou_placeholder_giang',                  team: 'BD' },
-  { name: 'Huyền Linh', open_id: 'ou_placeholder_hlinh',                  team: 'BD' },
-  { name: 'Nga Linh',   open_id: 'ou_placeholder_nlinh',                  team: 'BD' },
-  { name: 'Minh Anh',   open_id: 'ou_placeholder_manh',                   team: 'ACCOUNT' },
-  { name: 'Hân',        open_id: 'ou_placeholder_han',                    team: 'ACCOUNT' },
+  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', teams: ['BD', 'PM', 'AI', 'ACCOUNT'] },
+  { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', teams: ['AI'] },
+  { name: 'Giang',      open_id: 'ou_placeholder_giang',                teams: ['BD'] },
+  { name: 'Huyền Linh', open_id: 'ou_placeholder_hlinh',                teams: ['BD'] },
+  { name: 'Nga Linh',   open_id: 'ou_placeholder_nlinh',                teams: ['BD'] },
+  { name: 'Minh Anh',   open_id: 'ou_placeholder_manh',                 teams: ['ACCOUNT'] },
+  { name: 'Hân',        open_id: 'ou_placeholder_han',                  teams: ['ACCOUNT'] },
 ]
 
 const TEAMS = ['BD', 'PM', 'AI', 'ACCOUNT']
@@ -154,12 +154,13 @@ function fallbackUser(nameEl) {
 function resolveUserTeam() {
   const match = MEMBERS.find(m => m.open_id === currentUser.open_id)
   if (match) {
-    // SDK lấy được user thật → dùng team từ MEMBERS, sync selector
-    currentUser.team = match.team
-    console.log('[Lark SDK] resolved team:', currentUser.team, '— matched member:', match.name)
-    setTeam(currentUser.team)
+    // Nếu member ở nhiều team, ưu tiên localStorage; fallback team đầu tiên
+    const saved = localStorage.getItem(TEAM_STORAGE_KEY)
+    const team  = (saved && match.teams.includes(saved)) ? saved : match.teams[0]
+    currentUser.team = team
+    console.log('[Lark SDK] resolved teams:', match.teams, '→ chọn:', team, '— matched:', match.name)
+    setTeam(team)
   } else {
-    // Không match (open_id placeholder) → giữ team đang chọn trên selector
     console.warn('[Lark SDK] open_id không match member nào — giữ team hiện tại')
     const saved = localStorage.getItem(TEAM_STORAGE_KEY)
     setTeam(saved && TEAMS.includes(saved) ? saved : TEAM_FALLBACK)
@@ -445,6 +446,8 @@ function resetForm() {
   selectedAssignee  = null
   selectedFollowers = []
   document.querySelectorAll('.member-chip').forEach(c => c.classList.remove('selected'))
+  const picker = document.getElementById('assigneeTeamPicker')
+  if (picker) { picker.innerHTML = ''; picker.style.display = 'none' }
   document.querySelectorAll('.err').forEach(e => e.classList.remove('show'))
   document.getElementById('advSection').classList.remove('open')
   setSubmitState(false)
@@ -482,6 +485,44 @@ function selectAssignee(member, chipEl) {
   chipEl.classList.add('selected')
   selectedAssignee = member
   document.getElementById('err-assignee').classList.remove('show')
+  renderAssigneeTeamPicker(member)
+}
+
+// Khi assignee có nhiều team → hiện picker để senior chọn ghi vào Base nào
+function renderAssigneeTeamPicker(member) {
+  const wrap = document.getElementById('assigneeTeamPicker')
+  if (!wrap) return
+
+  if (!member.teams || member.teams.length <= 1) {
+    wrap.innerHTML = ''
+    wrap.style.display = 'none'
+    return
+  }
+
+  // Default chọn team đầu tiên
+  const defaultTeam = member.teams[0]
+  wrap.style.display = 'block'
+  wrap.innerHTML = `
+    <label class="field-label" style="margin-top:12px;display:block">team Base ghi vào <span class="req">*</span></label>
+    <div class="member-list" id="assigneeTeamList">
+      ${member.teams.map(t => `<div class="member-chip ${t === defaultTeam ? 'selected' : ''}" onclick="selectAssigneeTeam('${t}', this)">${t}</div>`).join('')}
+    </div>
+    <div class="field-hint">${member.name} thuộc ${member.teams.length} team — chọn Base để ghi task này vào, và lấy skill tương ứng</div>
+  `
+  selectedAssignee._chosenTeam = defaultTeam
+}
+
+function selectAssigneeTeam(team, chipEl) {
+  document.querySelectorAll('#assigneeTeamList .member-chip').forEach(c => c.classList.remove('selected'))
+  chipEl.classList.add('selected')
+  if (selectedAssignee) selectedAssignee._chosenTeam = team
+}
+
+// Trả team Base để ghi: ưu tiên _chosenTeam (nếu member nhiều team), fallback teams[0]
+function getAssigneeTargetTeam() {
+  if (!selectedAssignee) return TEAM_FALLBACK
+  if (selectedAssignee._chosenTeam) return selectedAssignee._chosenTeam
+  return (selectedAssignee.teams && selectedAssignee.teams[0]) || TEAM_FALLBACK
 }
 
 function toggleFollower(member, chipEl) {
@@ -612,7 +653,7 @@ async function checkBrief() {
       body: JSON.stringify({
         brief:            briefFull,
         assignee_open_id: selectedAssignee.open_id,
-        assignee_team:    selectedAssignee.team,
+        assignee_team:    getAssigneeTargetTeam(),
       }),
     })
     const data = await res.json()
@@ -706,7 +747,7 @@ async function submitTask() {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          team:          selectedAssignee.team,
+          team:          getAssigneeTargetTeam(),
           task_guid:     taskGuid,
           summary:       body.summary,
           description:   body.description,
@@ -731,7 +772,7 @@ async function submitTask() {
         body: JSON.stringify({
           task_guid:        taskGuid,
           assignee_open_id: selectedAssignee.open_id,
-          assignee_team:    selectedAssignee.team,
+          assignee_team:    getAssigneeTargetTeam(),
         }),
       })
       const sugData = await sugRes.json()
