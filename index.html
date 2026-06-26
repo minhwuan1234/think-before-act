@@ -473,6 +473,169 @@
       font-size: 11px; color: var(--muted);
     }
     .check-history strong { color: var(--text); }
+
+    /* Members tab */
+    .nav-tabs {
+      display: flex; gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .nav-tab {
+      font-family: inherit; font-size: 11px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      background: none; border: none; cursor: pointer;
+      padding: 10px 14px; color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .nav-tab:hover  { color: var(--text); }
+    .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .member-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .member-card {
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .member-card:hover { border-color: var(--accent); }
+    .member-card-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .member-card-teams {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      margin-bottom: 8px;
+    }
+    .member-card-team {
+      font-size: 9px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    .member-card-id {
+      font-size: 10px; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Assignee clickable trong task cards */
+    .assignee-link {
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .assignee-link:hover { color: var(--accent); }
+
+    /* Side panel */
+    .side-panel-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.4);
+      z-index: 100;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+    }
+    .side-panel-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .side-panel {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: min(540px, 90vw);
+      background: var(--bg);
+      border-left: 1px solid var(--border);
+      z-index: 101;
+      transform: translateX(100%);
+      transition: transform .2s;
+      overflow-y: auto;
+      padding: 24px 28px 80px;
+    }
+    .side-panel.open { transform: translateX(0); }
+
+    .side-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 18px;
+    }
+    .side-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .side-id   { font-size: 10px; color: var(--muted); }
+    .side-close {
+      background: none; border: 1px solid var(--border);
+      font-family: inherit; font-size: 14px; cursor: pointer;
+      padding: 4px 10px; color: var(--muted); line-height: 1;
+    }
+    .side-close:hover { color: var(--text); border-color: var(--text); }
+
+    .pattern-sec { margin-bottom: 22px; }
+    .pattern-title {
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .pattern-list { font-size: 12px; line-height: 1.7; }
+    .pattern-list strong { color: var(--text); }
+    .pattern-warn { color: var(--amber); }
+    .pattern-good { color: var(--green); }
+
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 22px;
+    }
+    .summary-cell { background: var(--bg); padding: 10px 8px; text-align: center; }
+    .summary-num { font-size: 18px; font-weight: 700; }
+    .summary-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .summary-cell.warn .summary-num { color: var(--amber); }
+    .summary-cell.bad  .summary-num { color: var(--red); }
+
+    .history-task {
+      border: 1px solid var(--border);
+      border-top: none;
+    }
+    .history-task:first-child { border-top: 1px solid var(--border); }
+    .history-row {
+      padding: 10px 14px; cursor: pointer;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .history-row:hover { background: var(--accent-bg); }
+    .history-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      margin-top: 6px; flex-shrink: 0;
+      border: 1.5px solid var(--muted);
+    }
+    .history-dot.done        { background: var(--green); border-color: var(--green); }
+    .history-dot.in-progress { background: var(--amber-bd); border-color: var(--amber); }
+    .history-main { flex: 1; min-width: 0; }
+    .history-name {
+      font-size: 12px; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .history-meta {
+      font-size: 10px; color: var(--muted); margin-top: 2px;
+      display: flex; gap: 10px; flex-wrap: wrap;
+    }
+    .history-team-badge {
+      font-size: 9px; font-weight: 700; letter-spacing: .06em;
+      padding: 2px 6px; border: 1px solid var(--accent);
+      color: var(--accent); flex-shrink: 0;
+    }
+    .history-expand {
+      display: none;
+      padding: 12px 14px;
+      background: var(--bg); filter: brightness(0.97);
+      border-top: 1px solid var(--border);
+    }
+    .history-expand.open { display: block; }
+    .history-detail-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--muted); margin-bottom: 4px;
+    }
+    .history-detail-text {
+      font-size: 11px; line-height: 1.6;
+      white-space: pre-wrap; margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -502,6 +665,22 @@
 
     <div class="team-label loading" id="teamLabel">đang xác định team...</div>
 
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-view="dashboard" onclick="switchView('dashboard')">dashboard</button>
+      <button class="nav-tab" data-view="members" onclick="switchView('members')">members</button>
+    </div>
+
+    <!-- View: Members -->
+    <div class="view" id="view-members">
+      <div class="dash-head" style="padding-top:0;border-bottom:none;margin-bottom:16px">
+        <h1 style="font-size:14px">members.</h1>
+        <p>click vào member để xem chi tiết lịch sử + pattern.</p>
+      </div>
+      <div class="member-grid" id="memberGrid"></div>
+    </div>
+
+    <!-- View: Dashboard (mặc định) -->
+    <div class="view active" id="view-dashboard">
     <div class="page-layout">
       <!-- Cột trái: risk panel -->
       <div class="col-left">
@@ -630,6 +809,11 @@
 
       </div><!-- /col-right -->
     </div><!-- /page-layout -->
+    </div><!-- /view-dashboard -->
+
+    <!-- Side panel: member profile -->
+    <div class="side-panel-overlay" id="sidePanelOverlay" onclick="closeMemberProfile()"></div>
+    <div class="side-panel" id="sidePanel"></div>
 
   </main>
 
