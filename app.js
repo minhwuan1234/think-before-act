@@ -195,6 +195,7 @@ async function renderDashboard(team) {
 
     if (tasks.length === 0) {
       listEl.innerHTML = `<div class="empty-state"><p>chưa có task nào cho team ${team}.</p></div>`
+      document.getElementById('riskPanel').innerHTML = ''
       document.getElementById('stat-total').textContent   = 0
       document.getElementById('stat-done').textContent    = 0
       document.getElementById('stat-pending').textContent = 0
@@ -223,12 +224,130 @@ async function renderDashboard(team) {
     document.getElementById('stat-done').textContent    = done
     document.getElementById('stat-pending').textContent = pending
 
+    // Risk panel
+    const riskEl = document.getElementById('riskPanel')
+    riskEl.innerHTML = buildRiskPanel(taskList)
+
     listEl.innerHTML = ''
     taskList.forEach(task => listEl.appendChild(buildTaskCard(task)))
 
   } catch (err) {
     listEl.innerHTML = `<div class="empty-state"><p>lỗi tải data: ${err.message}</p></div>`
   }
+}
+
+// ─── Risk Panel ────────────────────────────────────────────
+
+function buildRiskPanel(tasks) {
+  const now     = Date.now()
+  const DAY_MS  = 1000 * 60 * 60 * 24
+
+  const risks = []
+
+  tasks.forEach(task => {
+    if (task.status === 'done') return
+
+    const deadlineMs  = task.deadline ? new Date(task.deadline).getTime() : null
+    const createdMs   = task.created_at ? new Date(task.created_at).getTime() : null
+    const daysSince   = createdMs ? Math.floor((now - createdMs) / DAY_MS) : null
+    const daysToDeadline = deadlineMs ? Math.floor((deadlineMs - now) / DAY_MS) : null
+    const briefLen    = (task.description || '').replace(/\s+/g, ' ').trim().length
+
+    // 🔴 Overdue
+    if (deadlineMs && deadlineMs < now) {
+      const overdueDays = Math.abs(daysToDeadline)
+      risks.push({
+        level:   'red',
+        task,
+        reason:  `quá hạn ${overdueDays} ngày`,
+        sort:    0,
+      })
+      return
+    }
+
+    // 🔴 Deadline trong 1 ngày mà vẫn pending
+    if (daysToDeadline !== null && daysToDeadline <= 1 && task.status === 'pending') {
+      risks.push({
+        level:  'red',
+        task,
+        reason: `deadline ${daysToDeadline === 0 ? 'hôm nay' : 'ngày mai'}, vẫn pending`,
+        sort:   1,
+      })
+      return
+    }
+
+    // 🟡 Deadline trong 3 ngày mà vẫn pending
+    if (daysToDeadline !== null && daysToDeadline <= 3 && task.status === 'pending') {
+      risks.push({
+        level:  'amber',
+        task,
+        reason: `deadline còn ${daysToDeadline} ngày, vẫn pending`,
+        sort:   2,
+      })
+    }
+
+    // 🟡 Tạo task hơn 3 ngày chưa có update (status vẫn pending)
+    if (daysSince !== null && daysSince >= 3 && task.status === 'pending') {
+      risks.push({
+        level:  'amber',
+        task,
+        reason: `${daysSince} ngày chưa có update`,
+        sort:   3,
+      })
+    }
+
+    // 🟡 Brief quá ngắn (< 50 ký tự)
+    if (briefLen < 50) {
+      risks.push({
+        level:  'amber',
+        task,
+        reason: `brief quá ngắn (${briefLen} ký tự) — junior có thể chưa đủ context`,
+        sort:   4,
+      })
+    }
+  })
+
+  // Dedup theo task guid — giữ risk nặng nhất
+  const seen = {}
+  const deduped = risks
+    .sort((a, b) => a.sort - b.sort)
+    .filter(r => {
+      if (seen[r.task.guid]) return false
+      seen[r.task.guid] = true
+      return true
+    })
+
+  if (deduped.length === 0) return ''
+
+  const rows = deduped.map(r => `
+    <div class="risk-row risk-${r.level}" onclick="highlightTask('${r.task.guid}')">
+      <div class="risk-dot risk-dot-${r.level}"></div>
+      <div class="risk-info">
+        <span class="risk-name">${r.task.summary || '(không tên)'}</span>
+        <span class="risk-assignee">→ ${r.task.assignee}</span>
+      </div>
+      <div class="risk-reason">${r.reason}</div>
+    </div>
+  `).join('')
+
+  return `
+    <div class="risk-panel">
+      <div class="risk-header">
+        <span class="risk-title">⚠ cần chú ý</span>
+        <span class="risk-count">${deduped.length}</span>
+      </div>
+      <div class="risk-list">${rows}</div>
+    </div>
+  `
+}
+
+function highlightTask(guid) {
+  // Scroll đến task card + flash highlight
+  const card = document.querySelector(`.task-card[data-guid="${guid}"]`)
+  if (!card) return
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  card.classList.add('highlight')
+  setTimeout(() => card.classList.remove('highlight'), 2000)
 }
 
 function buildTaskCard(task) {
