@@ -24,6 +24,24 @@
       --red-bd:     #fca5a5;
     }
 
+    [data-theme="dark"] {
+      --bg:         #111110;
+      --text:       #f0efed;
+      --muted:      #666660;
+      --border:     #2a2a28;
+      --accent:     #818cf8;
+      --accent-bg:  #1e1b4b;
+      --amber:      #fbbf24;
+      --amber-bg:   #1c1507;
+      --amber-bd:   #78350f;
+      --green:      #4ade80;
+      --green-bg:   #052e16;
+      --green-bd:   #166534;
+      --red:        #f87171;
+      --red-bg:     #1f0707;
+      --red-bd:     #7f1d1d;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -41,8 +59,17 @@
       border-bottom: 1px solid var(--border);
       height: 48px;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 20px;
+      padding: 0 8vw;
     }
+
+    .theme-toggle {
+      background: none; border: 1px solid var(--border);
+      font-family: inherit; font-size: 11px;
+      color: var(--muted); cursor: pointer;
+      padding: 4px 10px; transition: all .15s;
+      line-height: 1;
+    }
+    .theme-toggle:hover { color: var(--text); border-color: var(--text); }
     .hdr-logo { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
     .hdr-right { display: flex; align-items: center; gap: 12px; }
     .hdr-user  { display: flex; align-items: center; gap: 8px; }
@@ -71,7 +98,7 @@
       outline: none; padding: 0;
     }
 
-    main { max-width: 1080px; margin: 0 auto; padding: 0 32px 80px; }
+    main { max-width: 100%; margin: 0 auto; padding: 0 8vw 80px; }
 
     .dash-head {
       padding: 32px 0 24px;
@@ -263,7 +290,8 @@
       display: none;
       border-top: 1px solid var(--border);
       padding: 16px;
-      background: #fafafa;
+      background: var(--bg);
+      filter: brightness(0.97);
     }
     .task-detail.open { display: block; }
 
@@ -361,7 +389,7 @@
       border-bottom: 1px solid var(--amber-bd);
       cursor: pointer; user-select: none;
     }
-    .risk-header:hover { background: #fff8e7; }
+    .risk-header:hover { background: var(--amber-bg); }
     .risk-title {
       font-size: 10px; font-weight: 700; text-transform: uppercase;
       letter-spacing: .08em; color: var(--amber);
@@ -383,7 +411,7 @@
       cursor: pointer; transition: background .15s;
     }
     .risk-row:last-child { border-bottom: none; }
-    .risk-row:hover { background: #fff8e7; }
+    .risk-row:hover { background: var(--amber-bg); }
     .risk-dot {
       width: 7px; height: 7px; border-radius: 50%;
       flex-shrink: 0; margin-top: 4px;
@@ -413,6 +441,7 @@
     <div class="hdr-right">
       <a href="skills.html" style="font-size:11px;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:4px 10px;transition:all .15s" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--text)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">skills</a>
       <!-- Team selector thủ công — override khi SDK chưa lấy được user -->
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">dark</button>
       <div class="team-selector-wrap">
         <label for="teamSelector">team</label>
         <select id="teamSelector"></select>
@@ -562,5 +591,22 @@
   <script src="https://lf-lark-suite-open-cdn.feishu.cn/obj/feishu-static/lark/web-app-sdk/jssdk-1.5.13.js"></script>
   <script>if(window.__tba_loaded){location.reload=function(){}}else{window.__tba_loaded=true}</script>
   <script src="app.js"></script>
+  <script>
+    const THEME_KEY = 'tba_theme'
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme)
+      const btn = document.getElementById('themeToggle')
+      if (btn) btn.textContent = theme === 'dark' ? 'light' : 'dark'
+    }
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'light'
+      const next = current === 'dark' ? 'light' : 'dark'
+      localStorage.setItem(THEME_KEY, next)
+      applyTheme(next)
+    }
+    // Apply saved theme on load
+    const savedTheme = localStorage.getItem(THEME_KEY) || 'light'
+    applyTheme(savedTheme)
+  </script>
 </body>
 </html>
