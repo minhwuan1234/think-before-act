@@ -33,7 +33,11 @@ let isSubmitting = false
 
 // ─── Init ──────────────────────────────────────────────────
 
+// Guard chống init 2 lần (Lark có thể fire DOMContentLoaded 2 lần)
+let __initialized = false
 document.addEventListener('DOMContentLoaded', async () => {
+  if (__initialized) return
+  __initialized = true
   renderMembers()
   renderTeamSelector()
   await initLark()
