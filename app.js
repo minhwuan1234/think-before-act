@@ -440,6 +440,8 @@ function resetForm() {
   document.getElementById('f-repeat').value      = ''
   document.getElementById('f-tasklist').value    = ''
   document.getElementById('resultPanel').style.display = 'none'
+  const cp = document.getElementById('checkPanel')
+  if (cp) { cp.className = 'check-panel'; cp.innerHTML = '' }
   selectedAssignee  = null
   selectedFollowers = []
   document.querySelectorAll('.member-chip').forEach(c => c.classList.remove('selected'))
@@ -570,6 +572,102 @@ function validate() {
   document.getElementById('err-output').classList.toggle('show', !output)
   document.getElementById('err-assignee').classList.toggle('show', !selectedAssignee)
   return !!(summary && desc && output && selectedAssignee)
+}
+
+// ─── Check brief (pre-submit review) ────────────────────────
+
+async function checkBrief() {
+  const summary      = document.getElementById('f-summary').value.trim()
+  const desc         = document.getElementById('f-description').value.trim()
+  const output       = document.getElementById('f-output').value.trim()
+  const panel        = document.getElementById('checkPanel')
+  const btn          = document.getElementById('btnCheckBrief')
+
+  if (!selectedAssignee) {
+    panel.className   = 'check-panel open fail'
+    panel.innerHTML   = `<div class="check-header"><span>⚠ chưa chọn assignee</span></div><div style="font-size:11px;color:var(--muted)">Chọn người nhận task trước khi check brief — để hệ thống kéo đúng skill + lịch sử của họ.</div>`
+    return
+  }
+
+  if (!summary && !desc && !output) {
+    panel.className = 'check-panel open fail'
+    panel.innerHTML = `<div class="check-header"><span>⚠ brief trống</span></div><div style="font-size:11px;color:var(--muted)">Điền ít nhất tên task hoặc brief để check.</div>`
+    return
+  }
+
+  // Tổng hợp brief y như cách submitTask làm
+  const briefFull = [
+    summary ? `Task: ${summary}` : '',
+    desc,
+    output ? `Output kỳ vọng:\n${output}` : '',
+  ].filter(Boolean).join('\n\n')
+
+  btn.textContent = 'đang check...'
+  btn.disabled    = true
+
+  try {
+    const res  = await fetch(`${WORKER_URL}/check-brief`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brief:            briefFull,
+        assignee_open_id: selectedAssignee.open_id,
+        assignee_team:    selectedAssignee.team,
+      }),
+    })
+    const data = await res.json()
+    console.log('[check-brief] response:', JSON.stringify(data))
+
+    if (!data.checklist) {
+      panel.className = 'check-panel open fail'
+      panel.innerHTML = `<div class="check-header"><span>⚠ lỗi check</span></div><pre style="font-size:11px">${JSON.stringify(data)}</pre>`
+      return
+    }
+
+    renderCheckPanel(data)
+  } catch (err) {
+    panel.className = 'check-panel open fail'
+    panel.innerHTML = `<div class="check-header"><span>⚠ lỗi network</span></div><div style="font-size:11px;color:var(--muted)">${err.message}</div>`
+  } finally {
+    btn.textContent = '↻ check brief'
+    btn.disabled    = false
+  }
+}
+
+function renderCheckPanel(data) {
+  const panel = document.getElementById('checkPanel')
+  const pass  = data.pass_count
+  const total = data.total
+  const allPass = pass === total
+
+  const rows = data.checklist.map(c => `
+    <div class="check-row">
+      <div class="check-icon ${c.pass ? 'pass' : 'fail'}">${c.pass ? '✓' : '!'}</div>
+      <div class="check-body">
+        <div class="check-item">${c.item}</div>
+        ${c.suggestion ? `<div class="check-suggest">→ ${c.suggestion}</div>` : ''}
+      </div>
+    </div>
+  `).join('')
+
+  const historyHTML = data.history_context
+    ? `<div class="check-history">
+         📚 lịch sử ${selectedAssignee.name}: <strong>${data.history_context.total_tasks}</strong> task,
+         <strong>${data.history_context.stuck_count}</strong> đang pending
+       </div>`
+    : `<div class="check-history">📚 ${selectedAssignee.name} chưa có task nào trong base team này</div>`
+
+  panel.className = `check-panel open ${allPass ? 'pass' : 'fail'}`
+  panel.innerHTML = `
+    <div class="check-header">
+      <span>// brief check — ${selectedAssignee.name}</span>
+      <span class="score ${allPass ? 'pass' : 'fail'}">${pass}/${total} pass</span>
+    </div>
+    <div class="check-list">${rows}</div>
+    ${historyHTML}
+  `
+
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 }
 
 // ─── Submit ─────────────────────────────────────────────────
