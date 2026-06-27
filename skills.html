@@ -7,139 +7,255 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:        #f9f9f8;
-      --text:      #111110;
-      --muted:     #888882;
-      --border:    #ddddd8;
-      --accent:    #4338ca;
-      --accent-bg: #eef2ff;
-      --green:     #166534;
-      --green-bg:  #f0fdf4;
-      --green-bd:  #86efac;
-      --red:       #991b1b;
-      --red-bg:    #fef2f2;
-      --red-bd:    #fca5a5;
-      --amber:     #92400e;
-      --amber-bg:  #fffbeb;
-      --amber-bd:  #fcd34d;
+      --bg:         #f9f9f8;
+      --text:       #111110;
+      --muted:      #888882;
+      --border:     #ddddd8;
+      --accent:     #4338ca;
+      --accent-bg:  #eef2ff;
+      --amber:      #92400e;
+      --amber-bg:   #fffbeb;
+      --amber-bd:   #fcd34d;
+      --green:      #166534;
+      --green-bg:   #f0fdf4;
+      --green-bd:   #86efac;
+      --red:        #991b1b;
+      --red-bg:     #fef2f2;
+      --red-bd:     #fca5a5;
     }
+
+    [data-theme="dark"] {
+      --bg:         #111110;
+      --text:       #f0efed;
+      --muted:      #666660;
+      --border:     #2a2a28;
+      --accent:     #818cf8;
+      --accent-bg:  #1e1b4b;
+      --amber:      #fbbf24;
+      --amber-bg:   #1c1507;
+      --amber-bd:   #78350f;
+      --green:      #4ade80;
+      --green-bg:   #052e16;
+      --green-bd:   #166534;
+      --red:        #f87171;
+      --red-bg:     #1f0707;
+      --red-bd:     #7f1d1d;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px; line-height: 1.6;
-      background: var(--bg); color: var(--text); min-height: 100vh;
+      font-size: 13px;
+      line-height: 1.6;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
     }
 
     /* ── Header ── */
     .hdr {
       position: sticky; top: 0; z-index: 10;
-      background: var(--bg); border-bottom: 1px solid var(--border);
-      height: 48px; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 20px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      height: 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 8vw;
     }
+
     .hdr-left { display: flex; align-items: center; gap: 12px; }
     .hdr-logo { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-    .hdr-sep  { color: var(--border); }
+    .hdr-sep  { color: var(--border); font-size: 14px; }
     .hdr-page { font-size: 11px; color: var(--muted); }
+
+    .hdr-right { display: flex; align-items: center; gap: 8px; }
+
     .hdr-back {
-      font-size: 11px; color: var(--muted); text-decoration: none;
-      border: 1px solid var(--border); padding: 4px 10px;
+      font-size: 11px; color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
       transition: all .15s;
     }
     .hdr-back:hover { color: var(--text); border-color: var(--text); }
 
-    /* ── Layout ── */
-    main { max-width: 720px; margin: 0 auto; padding: 0 20px 80px; }
+    .theme-toggle {
+      background: none; border: 1px solid var(--border);
+      font-family: inherit; font-size: 11px;
+      color: var(--muted); cursor: pointer;
+      padding: 4px 10px; transition: all .15s; line-height: 1;
+    }
+    .theme-toggle:hover { color: var(--text); border-color: var(--text); }
 
-    .page-head { padding: 32px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-    .page-head h1 { font-size: 18px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 4px; }
-    .page-head p  { font-size: 11px; color: var(--muted); }
+    /* ── Layout ── */
+    main {
+      padding: 0 8vw 80px;
+    }
+
+    .page-head {
+      padding: 32px 0 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    .page-head h1 {
+      font-size: 18px; font-weight: 700;
+      letter-spacing: -.02em; margin-bottom: 4px;
+    }
+    .page-head p { font-size: 11px; color: var(--muted); }
+
+    /* ── Content max-width ── */
+    .content-wrap {
+      max-width: 720px;
+    }
 
     /* ── Toast ── */
     .toast {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
       background: var(--text); color: var(--bg);
       font-size: 11px; padding: 10px 16px;
-      opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 100;
+      opacity: 0; transition: opacity .2s;
+      pointer-events: none; z-index: 100;
     }
     .toast.show { opacity: 1; }
 
-    /* ── Add new skill form ── */
+    /* ── Add section ── */
     .add-section {
       border: 1px dashed var(--border);
-      padding: 20px; margin-bottom: 24px;
+      padding: 0;
+      margin-bottom: 32px;
+      transition: border-color .15s;
     }
-    .add-section.open { border-style: solid; border-color: var(--accent); }
+    .add-section.open {
+      border-style: solid;
+      border-color: var(--accent);
+    }
+
     .add-toggle {
-      background: none; border: none; font-family: inherit; font-size: 12px;
-      color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 8px;
+      background: none; border: none;
+      font-family: inherit; font-size: 12px;
+      color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
       width: 100%; text-align: left;
+      padding: 14px 18px;
+      transition: color .15s;
     }
     .add-toggle:hover { color: var(--text); }
     .add-toggle.open  { color: var(--accent); }
-    .add-form { display: none; margin-top: 20px; }
+
+    .add-toggle-icon {
+      font-size: 14px; line-height: 1;
+      width: 18px; text-align: center;
+    }
+
+    .add-form {
+      display: none;
+      padding: 0 18px 18px;
+      border-top: 1px solid var(--border);
+    }
     .add-form.open { display: block; }
 
+    /* ── Form fields ── */
     .field { margin-bottom: 14px; }
-    .field-label { font-size: 11px; font-weight: 700; display: block; margin-bottom: 6px; }
+    .field:first-child { margin-top: 18px; }
+
+    .field-label {
+      font-size: 11px; font-weight: 700;
+      display: block; margin-bottom: 6px;
+    }
     .field-label .req { color: var(--red); }
+    .field-hint {
+      font-size: 10px; color: var(--muted); margin-top: 4px;
+    }
 
     input[type="text"], textarea, select {
-      width: 100%; font-family: inherit; font-size: 12px;
-      background: transparent; border: 1px solid var(--border);
-      color: var(--text); padding: 10px 12px;
-      outline: none; resize: none; transition: border-color .15s; line-height: 1.6;
+      width: 100%;
+      font-family: inherit; font-size: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none; resize: none;
+      transition: border-color .15s;
+      line-height: 1.6;
     }
-    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+    }
     select { cursor: pointer; }
 
     .type-row { display: flex; gap: 8px; }
-    .type-row select { flex: 1; }
-    .type-row input  { flex: 2; }
+    .type-row select { flex: 0 0 110px; }
+    .type-row input  { flex: 1; }
 
-    .form-actions { display: flex; gap: 8px; margin-top: 16px; }
+    /* ── Buttons ── */
     .btn {
-      font-family: inherit; font-size: 12px; cursor: pointer;
-      border: 1px solid; padding: 10px 16px; transition: opacity .15s;
+      font-family: inherit; font-size: 12px;
+      cursor: pointer; border: 1px solid;
+      padding: 10px 16px; transition: opacity .15s;
+      display: inline-block; text-align: center;
     }
-    .btn-dark  { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .btn-dark {
+      background: var(--text); color: var(--bg); border-color: var(--text);
+    }
     .btn-dark:hover { opacity: .75; }
-    .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+    .btn-ghost {
+      background: transparent; color: var(--muted); border-color: var(--border);
+    }
     .btn-ghost:hover { color: var(--text); border-color: var(--text); }
-    .btn-danger { background: transparent; color: var(--red); border-color: var(--red-bd); }
+    .btn-danger {
+      background: transparent; color: var(--red); border-color: var(--red-bd);
+    }
     .btn-danger:hover { background: var(--red-bg); }
     .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-    /* ── Skill group ── */
-    .group-label {
+    .form-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    /* ── Section divider ── */
+    .sec-divider {
       font-size: 10px; font-weight: 700; letter-spacing: .08em;
       text-transform: uppercase; color: var(--muted);
-      display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 12px;
     }
-    .group-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-    .group { margin-bottom: 28px; }
+    .sec-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .sec-count {
+      font-size: 10px; font-weight: 700;
+      color: var(--accent); background: var(--accent-bg);
+      padding: 1px 7px; border: 1px solid var(--accent);
+    }
 
-    /* ── Skill card ── */
+    /* ── Skill cards ── */
+    .skill-group { margin-bottom: 32px; }
+
     .skill-card {
       border: 1px solid var(--border);
-      border-top: none; transition: border-color .15s;
+      border-top: none;
+      transition: border-color .15s;
     }
     .skill-card:first-child { border-top: 1px solid var(--border); }
+    .skill-card:hover       { border-color: var(--text); }
+    .skill-card:hover + .skill-card { border-top-color: var(--text); }
 
     .skill-row {
       padding: 14px 16px;
       display: flex; align-items: flex-start; gap: 12px;
       cursor: pointer;
     }
-    .skill-row:hover { background: #fafafa; }
 
     .skill-badge {
       font-size: 9px; font-weight: 700; letter-spacing: .06em;
-      text-transform: uppercase; padding: 3px 7px;
-      border: 1px solid; flex-shrink: 0; margin-top: 1px;
+      text-transform: uppercase; padding: 3px 8px;
+      border: 1px solid; flex-shrink: 0; margin-top: 2px;
+      line-height: 1.4;
     }
-    .skill-badge.member { color: var(--accent); border-color: var(--accent); background: var(--accent-bg); }
-    .skill-badge.team   { color: var(--amber);  border-color: var(--amber-bd); background: var(--amber-bg); }
+    .skill-badge.member {
+      color: var(--accent); border-color: var(--accent); background: var(--accent-bg);
+    }
+    .skill-badge.team {
+      color: var(--amber); border-color: var(--amber-bd); background: var(--amber-bg);
+    }
 
     .skill-main { flex: 1; min-width: 0; }
     .skill-name { font-size: 13px; font-weight: 500; }
@@ -147,21 +263,45 @@
       font-size: 11px; color: var(--muted); margin-top: 3px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .chevron { font-size: 10px; color: var(--muted); flex-shrink: 0; transition: transform .15s; margin-top: 3px; }
+
+    .chevron {
+      font-size: 10px; color: var(--muted);
+      flex-shrink: 0; transition: transform .15s; margin-top: 3px;
+    }
     .skill-card.open .chevron { transform: rotate(180deg); }
 
     /* ── Skill detail / edit ── */
-    .skill-detail { display: none; border-top: 1px solid var(--border); padding: 16px; background: #fafafa; }
+    .skill-detail {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 18px 16px;
+      background: var(--bg);
+      filter: brightness(.97);
+    }
     .skill-detail.open { display: block; }
+    [data-theme="dark"] .skill-detail { filter: brightness(1.05); }
+
+    .detail-meta {
+      font-size: 10px; color: var(--muted);
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-meta strong { color: var(--text); }
 
     .edit-actions { display: flex; gap: 8px; margin-top: 14px; }
 
-    /* ── Empty ── */
-    .empty { padding: 32px; text-align: center; border: 1px dashed var(--border); }
-    .empty p { font-size: 12px; color: var(--muted); }
+    /* ── Empty / loading ── */
+    .empty-state {
+      padding: 40px 0; text-align: center;
+      border: 1px dashed var(--border);
+    }
+    .empty-state p   { font-size: 12px; color: var(--muted); }
+    .empty-state p + p { margin-top: 6px; }
 
-    /* ── Loading ── */
-    .loading-state { padding: 40px 0; text-align: center; color: var(--muted); font-size: 12px; }
+    .loading-state {
+      padding: 40px 0; text-align: center;
+      color: var(--muted); font-size: 11px;
+    }
   </style>
 </head>
 <body>
@@ -170,78 +310,117 @@
   <div class="hdr-left">
     <span class="hdr-logo">// think-before-act</span>
     <span class="hdr-sep">/</span>
-    <span class="hdr-page">skill manager</span>
+    <span class="hdr-page">skills</span>
   </div>
-  <a class="hdr-back" href="index.html">← dashboard</a>
+  <div class="hdr-right">
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">dark</button>
+    <a class="hdr-back" href="index.html">← dashboard</a>
+  </div>
 </header>
 
 <main>
   <div class="page-head">
     <h1>skill manager.</h1>
-    <p>cấu hình prompt phân tích brief theo từng member hoặc team — dùng khi tạo gợi ý warm-up.</p>
+    <p>cấu hình prompt warm-up cho từng member hoặc team — ảnh hưởng trực tiếp đến chất lượng câu hỏi AI sinh ra.</p>
   </div>
 
-  <!-- Add new skill -->
-  <div class="add-section" id="addSection">
-    <button class="add-toggle" id="addToggle" onclick="toggleAddForm()">
-      <span>+</span> <span>thêm skill mới</span>
-    </button>
-    <div class="add-form" id="addForm">
-      <div class="field">
-        <label class="field-label">loại & đối tượng <span class="req">*</span></label>
-        <div class="type-row">
-          <select id="new-type" onchange="updateTargetPlaceholder()">
-            <option value="member">member</option>
-            <option value="team">team</option>
-          </select>
-          <input type="text" id="new-target-id" placeholder="open_id của member (ou_xxx...)">
+  <div class="content-wrap">
+
+    <!-- Add new skill -->
+    <div class="add-section" id="addSection">
+      <button class="add-toggle" id="addToggle" onclick="toggleAddForm()">
+        <span class="add-toggle-icon">+</span>
+        <span id="addToggleLabel">thêm skill mới</span>
+      </button>
+      <div class="add-form" id="addForm">
+
+        <div class="field">
+          <label class="field-label">loại & đối tượng <span class="req">*</span></label>
+          <div class="type-row">
+            <select id="new-type" onchange="updateTargetPlaceholder()">
+              <option value="member">member</option>
+              <option value="team">team</option>
+            </select>
+            <input type="text" id="new-target-id" placeholder="open_id của member (ou_xxx...)">
+          </div>
+          <div class="field-hint">member → dùng open_id · team → dùng tên team (BD, PM, AI, ACCOUNT)</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">tên hiển thị <span class="req">*</span></label>
+          <input type="text" id="new-target-name" placeholder="vd: Quân, Chi, Team BD...">
+        </div>
+
+        <div class="field">
+          <label class="field-label">skill prompt <span class="req">*</span></label>
+          <textarea id="new-prompt" rows="5" placeholder="mô tả đặc điểm làm việc, điểm mạnh/yếu, lưu ý khi giao task cho người/team này..."></textarea>
+          <div class="field-hint">AI sẽ dùng nội dung này để cá nhân hoá câu hỏi warm-up</div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-dark" id="btnAdd" onclick="addSkill()">lưu skill</button>
+          <button class="btn btn-ghost" onclick="toggleAddForm()">huỷ</button>
         </div>
       </div>
-      <div class="field">
-        <label class="field-label">tên hiển thị <span class="req">*</span></label>
-        <input type="text" id="new-target-name" placeholder="vd: Quân, Chi, Team BD...">
-      </div>
-      <div class="field">
-        <label class="field-label">skill prompt <span class="req">*</span></label>
-        <textarea id="new-prompt" rows="5" placeholder="mô tả đặc điểm làm việc + điểm cần chú ý khi phân tích brief cho người/team này..."></textarea>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-dark" id="btnAdd" onclick="addSkill()">lưu skill</button>
-        <button class="btn btn-ghost" onclick="toggleAddForm()">huỷ</button>
-      </div>
     </div>
-  </div>
 
-  <!-- Skill list -->
-  <div id="skillList"><div class="loading-state">đang tải skill...</div></div>
+    <!-- Skill list -->
+    <div id="skillList">
+      <div class="loading-state">⏳ đang tải skill...</div>
+    </div>
+
+  </div><!-- /content-wrap -->
 </main>
 
 <div class="toast" id="toast"></div>
 
 <script>
 const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
+const THEME_KEY  = 'tba_theme'
 
 let skills = []
 
-// ─── Init ───────────────────────────────────────────────────
+// ─── Theme ──────────────────────────────────────────────────
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme)
+  const btn = document.getElementById('themeToggle')
+  if (btn) btn.textContent = theme === 'dark' ? 'light' : 'dark'
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light'
+  const next    = current === 'dark' ? 'light' : 'dark'
+  localStorage.setItem(THEME_KEY, next)
+  applyTheme(next)
+}
+// Apply on load
+applyTheme(localStorage.getItem(THEME_KEY) || 'light')
+
+// ─── Init ────────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', loadSkills)
 
 async function loadSkills() {
   try {
-    const res  = await fetch(`${WORKER_URL}/skills`)
+    const res = await fetch(`${WORKER_URL}/skills`)
     skills = await res.json()
     renderSkills()
   } catch (err) {
     document.getElementById('skillList').innerHTML =
-      `<div class="empty"><p>lỗi tải skill: ${err.message}</p></div>`
+      `<div class="empty-state"><p>⚠ lỗi tải skill: ${err.message}</p></div>`
   }
 }
 
-// ─── Render ─────────────────────────────────────────────────
+// ─── Render ──────────────────────────────────────────────────
+
 function renderSkills() {
-  const listEl = document.getElementById('skillList')
+  const listEl  = document.getElementById('skillList')
   if (!skills || skills.length === 0) {
-    listEl.innerHTML = `<div class="empty"><p>chưa có skill nào. thêm mới ở trên.</p></div>`
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <p>chưa có skill nào.</p>
+        <p style="margin-top:6px">thêm skill để AI cá nhân hoá câu hỏi warm-up cho từng member / team.</p>
+      </div>`
     return
   }
 
@@ -249,21 +428,41 @@ function renderSkills() {
   const teams   = skills.filter(s => s.target_type === 'team')
 
   let html = ''
+
   if (members.length > 0) {
-    html += `<div class="group"><div class="group-label">member</div>`
-    members.forEach(s => { html += buildSkillCard(s) })
-    html += `</div>`
+    html += `
+      <div class="skill-group">
+        <div class="sec-divider">
+          member
+          <span class="sec-count">${members.length}</span>
+        </div>
+        ${members.map(s => buildSkillCard(s)).join('')}
+      </div>`
   }
+
   if (teams.length > 0) {
-    html += `<div class="group"><div class="group-label">team</div>`
-    teams.forEach(s => { html += buildSkillCard(s) })
-    html += `</div>`
+    html += `
+      <div class="skill-group">
+        <div class="sec-divider">
+          team
+          <span class="sec-count">${teams.length}</span>
+        </div>
+        ${teams.map(s => buildSkillCard(s)).join('')}
+      </div>`
   }
+
   listEl.innerHTML = html
 }
 
 function buildSkillCard(s) {
-  const preview = s.skill_prompt.length > 80 ? s.skill_prompt.slice(0, 80) + '...' : s.skill_prompt
+  const preview = s.skill_prompt.length > 90
+    ? s.skill_prompt.slice(0, 90) + '...'
+    : s.skill_prompt
+
+  const targetLabel = s.target_type === 'team'
+    ? `team · ${s.target_id}`
+    : `member · ${s.target_id}`
+
   return `
     <div class="skill-card" id="card-${s.id}">
       <div class="skill-row" onclick="toggleDetail('${s.id}')">
@@ -275,6 +474,8 @@ function buildSkillCard(s) {
         <div class="chevron">▾</div>
       </div>
       <div class="skill-detail" id="detail-${s.id}">
+        <div class="detail-meta">${targetLabel}</div>
+
         <div class="field">
           <label class="field-label">loại & đối tượng</label>
           <div class="type-row">
@@ -285,21 +486,24 @@ function buildSkillCard(s) {
             <input type="text" id="edit-target-${s.id}" value="${s.target_id}">
           </div>
         </div>
+
         <div class="field">
           <label class="field-label">tên hiển thị</label>
           <input type="text" id="edit-name-${s.id}" value="${s.target_name || ''}">
         </div>
+
         <div class="field">
           <label class="field-label">skill prompt</label>
           <textarea id="edit-prompt-${s.id}" rows="6">${s.skill_prompt}</textarea>
         </div>
+
         <div class="edit-actions">
           <button class="btn btn-dark" id="btnSave-${s.id}" onclick="saveSkill('${s.id}')">lưu thay đổi</button>
-          <button class="btn btn-danger" onclick="deleteSkill('${s.id}', '${s.target_name || s.target_id}')">xoá</button>
+          <button class="btn btn-ghost" onclick="toggleDetail('${s.id}')">đóng</button>
+          <button class="btn btn-danger" onclick="deleteSkill('${s.id}', '${escHtml(s.target_name || s.target_id)}')">xoá</button>
         </div>
       </div>
-    </div>
-  `
+    </div>`
 }
 
 function toggleDetail(id) {
@@ -309,22 +513,27 @@ function toggleDetail(id) {
   card.classList.toggle('open')
 }
 
-// ─── Add skill ──────────────────────────────────────────────
+// ─── Add skill ───────────────────────────────────────────────
+
 function toggleAddForm() {
   const form    = document.getElementById('addForm')
   const section = document.getElementById('addSection')
   const toggle  = document.getElementById('addToggle')
+  const label   = document.getElementById('addToggleLabel')
+  const icon    = toggle.querySelector('.add-toggle-icon')
   const isOpen  = form.classList.toggle('open')
   section.classList.toggle('open', isOpen)
   toggle.classList.toggle('open', isOpen)
-  toggle.querySelector('span:first-child').textContent = isOpen ? '×' : '+'
-  toggle.querySelector('span:last-child').textContent  = isOpen ? 'đóng' : 'thêm skill mới'
+  icon.textContent  = isOpen ? '×' : '+'
+  label.textContent = isOpen ? 'đóng' : 'thêm skill mới'
 }
 
 function updateTargetPlaceholder() {
   const type = document.getElementById('new-type').value
   document.getElementById('new-target-id').placeholder =
-    type === 'member' ? 'open_id của member (ou_xxx...)' : 'tên team (BD, L&D, PRODUCT, ACCOUNT)'
+    type === 'member'
+      ? 'open_id của member (ou_xxx...)'
+      : 'tên team (BD, PM, AI, ACCOUNT)'
 }
 
 async function addSkill() {
@@ -333,7 +542,10 @@ async function addSkill() {
   const name   = document.getElementById('new-target-name').value.trim()
   const prompt = document.getElementById('new-prompt').value.trim()
 
-  if (!target || !name || !prompt) { showToast('⚠ điền đủ các trường bắt buộc'); return }
+  if (!target || !name || !prompt) {
+    showToast('⚠ điền đủ các trường bắt buộc')
+    return
+  }
 
   const btn = document.getElementById('btnAdd')
   btn.textContent = 'đang lưu...'
@@ -343,17 +555,21 @@ async function addSkill() {
     const res  = await fetch(`${WORKER_URL}/skills`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target_type: type, target_id: target, target_name: name, skill_prompt: prompt }),
+      body: JSON.stringify({
+        target_type:  type,
+        target_id:    target,
+        target_name:  name,
+        skill_prompt: prompt,
+      }),
     })
     const data = await res.json()
     if (data && data.length > 0) {
       skills.push(data[0])
       renderSkills()
       toggleAddForm()
-      // reset form
-      document.getElementById('new-target-id').value    = ''
-      document.getElementById('new-target-name').value  = ''
-      document.getElementById('new-prompt').value       = ''
+      document.getElementById('new-target-id').value   = ''
+      document.getElementById('new-target-name').value = ''
+      document.getElementById('new-prompt').value      = ''
       showToast('✓ skill đã được thêm')
     } else {
       showToast('lỗi: ' + JSON.stringify(data))
@@ -366,14 +582,18 @@ async function addSkill() {
   }
 }
 
-// ─── Save skill ─────────────────────────────────────────────
+// ─── Save skill ──────────────────────────────────────────────
+
 async function saveSkill(id) {
   const type   = document.getElementById(`edit-type-${id}`).value
   const target = document.getElementById(`edit-target-${id}`).value.trim()
   const name   = document.getElementById(`edit-name-${id}`).value.trim()
   const prompt = document.getElementById(`edit-prompt-${id}`).value.trim()
 
-  if (!target || !prompt) { showToast('⚠ không được để trống target hoặc prompt'); return }
+  if (!target || !prompt) {
+    showToast('⚠ không được để trống target hoặc prompt')
+    return
+  }
 
   const btn = document.getElementById(`btnSave-${id}`)
   btn.textContent = 'đang lưu...'
@@ -383,17 +603,22 @@ async function saveSkill(id) {
     const res  = await fetch(`${WORKER_URL}/skills/${id}`, {
       method:  'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target_type: type, target_id: target, target_name: name, skill_prompt: prompt, updated_at: new Date().toISOString() }),
+      body: JSON.stringify({
+        target_type:  type,
+        target_id:    target,
+        target_name:  name,
+        skill_prompt: prompt,
+        updated_at:   new Date().toISOString(),
+      }),
     })
     const data = await res.json()
     if (data && data.length > 0) {
       const idx = skills.findIndex(s => s.id === id)
       if (idx >= 0) skills[idx] = data[0]
       renderSkills()
-      // reopen detail
       setTimeout(() => {
         const detail = document.getElementById('detail-' + id)
-        const card   = document.getElementById('card-' + id)
+        const card   = document.getElementById('card-'   + id)
         if (detail) { detail.classList.add('open'); card.classList.add('open') }
       }, 50)
       showToast('✓ skill đã cập nhật')
@@ -409,8 +634,9 @@ async function saveSkill(id) {
 }
 
 // ─── Delete skill ────────────────────────────────────────────
+
 async function deleteSkill(id, name) {
-  if (!confirm(`Xoá skill của "${name}"? Không thể hoàn tác.`)) return
+  if (!confirm(`xoá skill của "${name}"? không thể hoàn tác.`)) return
   try {
     await fetch(`${WORKER_URL}/skills/${id}`, { method: 'DELETE' })
     skills = skills.filter(s => s.id !== id)
@@ -421,7 +647,12 @@ async function deleteSkill(id, name) {
   }
 }
 
-// ─── Toast ──────────────────────────────────────────────────
+// ─── Utils ───────────────────────────────────────────────────
+
+function escHtml(str) {
+  return (str || '').replace(/'/g, "\\'")
+}
+
 let toastTimer
 function showToast(msg) {
   const el = document.getElementById('toast')
