@@ -27,6 +27,7 @@ let isInLark          = false
 let selectedAssignee  = null
 let selectedFollowers = []
 let selectedTaskType  = null   // { id, name }
+let selectedSkillId   = null   // UUID từ brief_templates.skill_id
 let taskTypes         = []     // loaded from /skills?target_type=task_type
 let currentTeam       = ''
 let isSubmitting      = false
@@ -151,6 +152,9 @@ function applyTemplate(tpl) {
   if (tpl.summary_tpl)     document.getElementById('f-summary').value     = tpl.summary_tpl
   if (tpl.description_tpl) document.getElementById('f-description').value = tpl.description_tpl
   if (tpl.output_tpl)      document.getElementById('f-output').value      = tpl.output_tpl
+
+  // Lưu skill_id từ template → dùng khi check-brief + generate-suggestion
+  selectedSkillId = tpl.skill_id || null
 
   // Increment used_count (fire-and-forget)
   if (tpl.id) {
@@ -835,6 +839,7 @@ function resetForm() {
   selectedAssignee  = null
   selectedFollowers = []
   selectedTaskType  = null
+  selectedSkillId   = null
 
   document.querySelectorAll('.member-chip').forEach(c => c.classList.remove('selected'))
   document.querySelectorAll('#taskTypeList .member-chip').forEach(c => c.classList.remove('selected'))
@@ -1028,7 +1033,7 @@ async function checkBrief() {
         brief:            briefFull,
         assignee_open_id: selectedAssignee.open_id,
         assignee_team:    getAssigneeTargetTeam(),
-        task_type_id:     selectedTaskType?.id || null,
+        skill_id:         selectedSkillId || null,
       }),
     })
     const data = await res.json()
@@ -1072,10 +1077,13 @@ function renderCheckPanel(data) {
     ? `<div class="check-history">📚 lịch sử ${selectedAssignee.name}: <strong>${data.history_context.total_tasks}</strong> task, <strong>${data.history_context.stuck_count}</strong> đang pending</div>`
     : `<div class="check-history">📚 ${selectedAssignee.name} chưa có task nào trong base team này</div>`
 
+  const skillLabel = selectedSkillId
+    ? (selectedTaskType ? ` · ${selectedTaskType.name}` : ' · skill đã chọn')
+    : ''
   panel.className = `check-panel open ${allPass ? 'pass' : 'fail'}`
   panel.innerHTML = `
     <div class="check-header">
-      <span>// brief check — ${selectedAssignee.name}${selectedTaskType ? ` · ${selectedTaskType.name}` : ''}</span>
+      <span>// brief check — ${selectedAssignee.name}${skillLabel}</span>
       <span class="score ${allPass ? 'pass' : 'fail'}">${pass}/${total} pass</span>
     </div>
     <div class="check-list">${rows}</div>
@@ -1138,7 +1146,7 @@ async function submitTask() {
           task_guid:        taskGuid,
           assignee_open_id: selectedAssignee.open_id,
           assignee_team:    getAssigneeTargetTeam(),
-          task_type_id:     selectedTaskType?.id || null,
+          skill_id:         selectedSkillId || null,
         }),
       })
     } catch (e) { console.warn('[generate-suggestion]', e.message) }
@@ -1161,7 +1169,7 @@ function showResult(type, taskGuid, errMsg) {
       <div class="result-title">// task đã tạo thành công</div>
       <div class="result-body">
         task guid: <strong>${taskGuid}</strong><br>
-        AI đang sinh câu hỏi warm-up${selectedTaskType ? ` (loại: ${selectedTaskType.name})` : ''} và chèn vào description Lark task.
+        AI đang sinh câu hỏi warm-up${selectedSkillId ? ' (có skill context)' : ''} và chèn vào description Lark task.
       </div>
       <button class="btn btn-ghost" style="margin-top:12px;width:auto;padding:8px 14px" onclick="resetForm();toggleCreateForm()">tạo task khác</button>
       <button class="btn btn-ghost" style="margin-top:12px;width:auto;padding:8px 14px;margin-left:8px" onclick="renderDashboard(currentTeam)">↻ refresh dashboard</button>
