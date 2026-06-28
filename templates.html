@@ -297,7 +297,8 @@ applyTheme(localStorage.getItem(THEME_KEY) || 'light')
 
 // ─── Init ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  await Promise.all([loadTaskTypes(), loadTemplates()])
+  await loadTaskTypes()   // phải xong trước để skillCache sẵn sàng
+  await loadTemplates()   // renderTemplates() mới đọc được skillCache
 })
 
 async function loadTaskTypes() {
@@ -311,6 +312,10 @@ async function loadTaskTypes() {
 }
 
 function populateTaskTypeSelects() {
+  // Add class trước để querySelectorAll bắt được luôn
+  const newSel = document.getElementById('new-task-type')
+  if (newSel) newSel.classList.add('task-type-select')
+
   document.querySelectorAll('.task-type-select').forEach(sel => {
     const current = sel.value
     while (sel.options.length > 1) sel.remove(1)
@@ -322,8 +327,6 @@ function populateTaskTypeSelects() {
     })
     if (current) sel.value = current
   })
-  // Add class để sau này query được
-  document.getElementById('new-task-type').classList.add('task-type-select')
 }
 
 async function loadTemplates() {
