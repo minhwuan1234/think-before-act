@@ -237,6 +237,9 @@
     .detail-sec { margin-bottom: 16px; }
     .detail-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
     .detail-text { font-size: 12px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+    .sync-btn { font-family: inherit; font-size: 10px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); padding: 3px 8px; transition: all .15s; }
+    .sync-btn:hover { color: var(--text); border-color: var(--text); }
+    .sync-btn:disabled { opacity: .5; cursor: not-allowed; }
     .chevron { font-size: 10px; color: var(--muted); flex-shrink: 0; transition: transform .15s; margin-top: 3px; }
     .task-card.open .chevron { transform: rotate(180deg); }
 
@@ -515,14 +518,20 @@
               <div class="sec-title">thời gian</div>
               <div class="field">
                 <label class="field-label">ngày bắt đầu</label>
-                <input type="datetime-local" id="f-start">
+                <div style="display:flex;gap:8px">
+                  <input type="date" id="f-start-date" style="flex:2">
+                  <input type="time" id="f-start-time" style="flex:1">
+                </div>
               </div>
               <div class="field">
                 <label class="field-label">deadline</label>
-                <input type="datetime-local" id="f-due">
+                <div style="display:flex;gap:8px">
+                  <input type="date" id="f-due-date" style="flex:2">
+                  <input type="time" id="f-due-time" style="flex:1" placeholder="23:59">
+                </div>
                 <label class="toggle-row" style="margin-top:10px">
                   <input type="checkbox" id="f-allday">
-                  <span>cả ngày (không cần giờ cụ thể)</span>
+                  <span>cả ngày (không cần giờ)</span>
                 </label>
               </div>
               <div class="field">
