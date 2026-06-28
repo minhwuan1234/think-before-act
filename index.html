@@ -239,7 +239,12 @@
     .detail-text { font-size: 12px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
     .sync-btn { font-family: inherit; font-size: 10px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); padding: 3px 8px; transition: all .15s; }
     .sync-btn:hover { color: var(--text); border-color: var(--text); }
-    .sync-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .sync-btn:disabled, .btn-done:disabled, .btn-reopen:disabled { opacity: .5; cursor: not-allowed; }
+    .detail-actions { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
+    .btn-done { font-family: inherit; font-size: 11px; cursor: pointer; border: 1px solid var(--green-bd); background: var(--green-bg); color: var(--green); padding: 6px 14px; transition: all .15s; font-weight: 500; }
+    .btn-done:hover { background: var(--green); color: var(--bg); }
+    .btn-reopen { font-family: inherit; font-size: 11px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); padding: 6px 14px; transition: all .15s; }
+    .btn-reopen:hover { border-color: var(--text); color: var(--text); }
     .chevron { font-size: 10px; color: var(--muted); flex-shrink: 0; transition: transform .15s; margin-top: 3px; }
     .task-card.open .chevron { transform: rotate(180deg); }
 
