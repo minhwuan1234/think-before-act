@@ -31,6 +31,7 @@ let selectedSkillId   = null   // UUID từ brief_templates.skill_id
 let taskTypes         = []     // loaded from /skills?target_type=task_type
 let currentTeam       = ''
 let isSubmitting      = false
+let lastGenResult     = null   // kết quả generate-suggestion gần nhất
 
 // ─── Init ─────────────────────────────────────────────────────
 
@@ -1154,15 +1155,23 @@ async function submitTask() {
     // Bước 3: generate warm-up
     setSubmitState(true, 'suggestion')
     try {
-      await fetch(`${WORKER_URL}/generate-suggestion`, {
+      const genRes  = await fetch(`${WORKER_URL}/generate-suggestion`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           task_guid:        taskGuid,
           assignee_open_id: selectedAssignee.open_id,
           assignee_team:    getAssigneeTargetTeam(),
           skill_id:         selectedSkillId || null,
+          // Pass data trực tiếp — tránh Base timing issue
+          task_summary:     body.summary,
+          task_description: body.description,
         }),
       })
+      const genData = await genRes.json()
+      lastGenResult = genData
+      if (!genData.ok) {
+        console.warn('[generate-suggestion] không thành công:', JSON.stringify(genData))
+      }
     } catch (e) { console.warn('[generate-suggestion]', e.message) }
 
     showResult('success', taskGuid)
@@ -1203,11 +1212,13 @@ function showResult(type, taskGuid, errMsg) {
   panel.style.display = 'block'
   if (type === 'success') {
     panel.className = 'result-panel success'
+    const warmupNote = lastGenResult?.ok === false
+      ? '<br><span style="color:var(--amber)">⚠ warm-up chưa được chèn — kiểm tra Lark app scope hoặc task guid.</span>'
+      : '<br>câu hỏi warm-up đã được chèn vào description Lark task.'
     panel.innerHTML = `
       <div class="result-title">// task đã tạo thành công</div>
       <div class="result-body">
-        task guid: <strong>${taskGuid}</strong><br>
-        AI đang sinh câu hỏi warm-up${selectedSkillId ? ' (có skill context)' : ''} và chèn vào description Lark task.
+        task guid: <strong>${taskGuid}</strong>${warmupNote}
       </div>
       <button class="btn btn-ghost" style="margin-top:12px;width:auto;padding:8px 14px" onclick="resetForm();toggleCreateForm()">tạo task khác</button>
       <button class="btn btn-ghost" style="margin-top:12px;width:auto;padding:8px 14px;margin-left:8px" onclick="renderDashboard(currentTeam)">↻ refresh dashboard</button>
