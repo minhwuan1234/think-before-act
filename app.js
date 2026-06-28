@@ -786,12 +786,12 @@ function buildTaskCard(task) {
         <div class="detail-label">brief</div>
         <div class="detail-text">${task.description || '(chưa có brief)'}</div>
       </div>
-      <div class="detail-sec" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <div>
-          <div class="detail-label">status</div>
-          <div class="detail-text">${task.status}</div>
-        </div>
-        <button class="sync-btn" onclick="syncTaskStatus('${task.guid}', '${task.team}', this)" title="sync status từ Lark Task">↻ sync</button>
+      <div class="detail-actions">
+        ${task.status !== 'done'
+          ? `<button class="btn-done" onclick="markTaskDone('${task.guid}', '${task.team}', true, this)">✓ hoàn thành</button>`
+          : `<button class="btn-reopen" onclick="markTaskDone('${task.guid}', '${task.team}', false, this)">↩ reopen</button>`
+        }
+        <button class="sync-btn" onclick="syncTaskStatus('${task.guid}', '${task.team}', this)">↻ sync status</button>
       </div>
     </div>
   `
@@ -1180,6 +1180,32 @@ async function submitTask() {
     showResult('error', null, err.message)
   } finally {
     setSubmitState(false)
+  }
+}
+
+// ─── Mark task done / reopen ─────────────────────────────────────
+
+async function markTaskDone(guid, team, done, btnEl) {
+  const label = done ? '✓ hoàn thành' : '↩ reopen'
+  if (btnEl) { btnEl.textContent = '⏳'; btnEl.disabled = true }
+
+  try {
+    const res  = await fetch(`${WORKER_URL}/mark-done`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ task_guid: guid, team, done }),
+    })
+    const data = await res.json()
+    if (data.ok) {
+      showToast(done ? '✓ task đã hoàn thành' : '↩ task đã reopen')
+      renderDashboard(currentTeam)
+    } else {
+      showToast('lỗi: ' + (data.error || JSON.stringify(data)))
+      if (btnEl) { btnEl.textContent = label; btnEl.disabled = false }
+    }
+  } catch (err) {
+    showToast('lỗi: ' + err.message)
+    if (btnEl) { btnEl.textContent = label; btnEl.disabled = false }
   }
 }
 
