@@ -7,177 +7,100 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:         #f9f9f8;
-      --text:       #111110;
-      --muted:      #888882;
-      --border:     #ddddd8;
-      --accent:     #4338ca;
-      --accent-bg:  #eef2ff;
-      --amber:      #92400e;
-      --amber-bg:   #fffbeb;
-      --amber-bd:   #fcd34d;
-      --green:      #166534;
-      --green-bg:   #f0fdf4;
-      --green-bd:   #86efac;
-      --red:        #991b1b;
-      --red-bg:     #fef2f2;
-      --red-bd:     #fca5a5;
+      --bg:#f9f9f8;--text:#111110;--muted:#888882;--border:#ddddd8;
+      --accent:#4338ca;--accent-bg:#eef2ff;
+      --amber:#92400e;--amber-bg:#fffbeb;--amber-bd:#fcd34d;
+      --green:#166534;--green-bg:#f0fdf4;--green-bd:#86efac;
+      --red:#991b1b;--red-bg:#fef2f2;--red-bd:#fca5a5;
     }
     [data-theme="dark"] {
-      --bg:         #111110;
-      --text:       #f0efed;
-      --muted:      #666660;
-      --border:     #2a2a28;
-      --accent:     #818cf8;
-      --accent-bg:  #1e1b4b;
-      --amber:      #fbbf24;
-      --amber-bg:   #1c1507;
-      --amber-bd:   #78350f;
-      --green:      #4ade80;
-      --green-bg:   #052e16;
-      --green-bd:   #166534;
-      --red:        #f87171;
-      --red-bg:     #1f0707;
-      --red-bd:     #7f1d1d;
+      --bg:#111110;--text:#f0efed;--muted:#666660;--border:#2a2a28;
+      --accent:#818cf8;--accent-bg:#1e1b4b;
+      --amber:#fbbf24;--amber-bg:#1c1507;--amber-bd:#78350f;
+      --green:#4ade80;--green-bg:#052e16;--green-bd:#166534;
+      --red:#f87171;--red-bg:#1f0707;--red-bd:#7f1d1d;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-    /* ── Header ── */
-    .hdr {
-      position: sticky; top: 0; z-index: 10;
-      background: var(--bg); border-bottom: 1px solid var(--border);
-      height: 48px; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 8vw;
-    }
-    .hdr-left { display: flex; align-items: center; gap: 12px; }
-    .hdr-logo { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-    .hdr-sep  { color: var(--border); }
-    .hdr-page { font-size: 11px; color: var(--muted); }
-    .hdr-right { display: flex; align-items: center; gap: 8px; }
-    .hdr-link { font-size: 11px; color: var(--muted); text-decoration: none; border: 1px solid var(--border); padding: 4px 10px; transition: all .15s; }
-    .hdr-link:hover { color: var(--text); border-color: var(--text); }
-    .theme-toggle { background: none; border: 1px solid var(--border); font-family: inherit; font-size: 11px; color: var(--muted); cursor: pointer; padding: 4px 10px; transition: all .15s; line-height: 1; }
-    .theme-toggle:hover { color: var(--text); border-color: var(--text); }
-
-    /* ── Layout ── */
-    main { padding: 0 8vw 80px; }
-    .content-wrap { max-width: 760px; }
-    .page-head { padding: 32px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
-    .page-head h1 { font-size: 18px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 4px; }
-    .page-head p  { font-size: 11px; color: var(--muted); }
-
-    /* ── Add section ── */
-    .add-section { border: 1px dashed var(--border); margin-bottom: 32px; transition: border-color .15s; }
-    .add-section.open { border-style: solid; border-color: var(--accent); }
-    .add-toggle { background: none; border: none; font-family: inherit; font-size: 12px; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 14px 18px; transition: color .15s; }
-    .add-toggle:hover { color: var(--text); }
-    .add-toggle.open  { color: var(--accent); }
-    .add-toggle-icon  { font-size: 14px; line-height: 1; width: 18px; text-align: center; }
-    .add-form { display: none; padding: 0 18px 18px; border-top: 1px solid var(--border); }
-    .add-form.open { display: block; }
-
-    /* ── Fields ── */
-    .field { margin-bottom: 14px; }
-    .field:first-child { margin-top: 18px; }
-    .field-label { font-size: 11px; font-weight: 700; display: block; margin-bottom: 6px; }
-    .field-label .req { color: var(--red); }
-    .field-hint { font-size: 10px; color: var(--muted); margin-top: 4px; }
-    .field-row { display: flex; gap: 8px; margin-bottom: 14px; }
-    .field-row > * { flex: 1; }
-
-    input[type="text"], textarea, select {
-      width: 100%; font-family: inherit; font-size: 12px;
-      background: transparent; border: 1px solid var(--border); color: var(--text);
-      padding: 10px 12px; outline: none; resize: none; transition: border-color .15s; line-height: 1.6;
-    }
-    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-    select { cursor: pointer; }
-
-    /* ── Skill panel ── */
-    .skill-panel {
-      margin-top: 10px;
-      border: 1px solid var(--border);
-      display: none;
-    }
-    .skill-panel.open { display: block; }
-    .skill-panel-head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 14px;
-      background: var(--accent-bg);
-      border-bottom: 1px solid var(--border);
-    }
-    .skill-panel-label {
-      font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .06em; color: var(--accent);
-    }
-    .skill-panel-actions { display: flex; gap: 6px; }
-    .skill-panel-body { padding: 12px 14px; }
-    .skill-prompt-view {
-      font-size: 11px; line-height: 1.7; color: var(--text);
-      white-space: pre-wrap;
-    }
-    .skill-prompt-edit { display: none; }
-    .skill-prompt-edit.open { display: block; }
-    .skill-none {
-      font-size: 11px; color: var(--muted); padding: 10px 14px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-
-    /* ── Buttons ── */
-    .btn { font-family: inherit; font-size: 12px; cursor: pointer; border: 1px solid; padding: 10px 16px; transition: opacity .15s; display: inline-block; }
-    .btn-dark   { background: var(--text); color: var(--bg); border-color: var(--text); }
-    .btn-dark:hover { opacity: .75; }
-    .btn-ghost  { background: transparent; color: var(--muted); border-color: var(--border); }
-    .btn-ghost:hover { color: var(--text); border-color: var(--text); }
-    .btn-danger { background: transparent; color: var(--red); border-color: var(--red-bd); }
-    .btn-danger:hover { background: var(--red-bg); }
-    .btn-xs {
-      font-family: inherit; font-size: 10px; cursor: pointer; border: 1px solid var(--border);
-      background: transparent; color: var(--muted); padding: 3px 8px; transition: all .15s; line-height: 1.4;
-    }
-    .btn-xs:hover { color: var(--text); border-color: var(--text); }
-    .btn-xs.accent { border-color: var(--accent); color: var(--accent); }
-    .btn-xs.accent:hover { background: var(--accent-bg); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .form-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-
-    /* ── Divider ── */
-    .sec-divider { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .sec-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-    .sec-count { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-bg); padding: 1px 7px; border: 1px solid var(--accent); }
-
-    /* ── Template cards ── */
-    .template-group { margin-bottom: 32px; }
-    .template-card { border: 1px solid var(--border); border-top: none; transition: border-color .15s; }
-    .template-card:first-child { border-top: 1px solid var(--border); }
-    .template-card:hover { border-color: var(--text); }
-    .template-row { padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
-    .template-badge { font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; flex-shrink: 0; margin-top: 2px; line-height: 1.4; }
-    .template-badge.has-type { color: var(--green); border-color: var(--green-bd); background: var(--green-bg); }
-    .template-badge.no-type  { color: var(--muted); border-color: var(--border); }
-    .template-main { flex: 1; min-width: 0; }
-    .template-name { font-size: 13px; font-weight: 500; }
-    .template-meta { font-size: 10px; color: var(--muted); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .template-meta .used-badge { color: var(--accent); }
-    .template-preview { font-size: 11px; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chevron { font-size: 10px; color: var(--muted); flex-shrink: 0; transition: transform .15s; margin-top: 3px; }
-    .template-card.open .chevron { transform: rotate(180deg); }
-
-    .template-detail { display: none; border-top: 1px solid var(--border); padding: 18px 16px; background: var(--bg); filter: brightness(.97); }
-    .template-detail.open { display: block; }
-    [data-theme="dark"] .template-detail { filter: brightness(1.05); }
-    .detail-meta { font-size: 10px; color: var(--muted); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-    .edit-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-
-    /* ── Empty / loading ── */
-    .empty-state { padding: 40px 0; text-align: center; border: 1px dashed var(--border); }
-    .empty-state p { font-size: 12px; color: var(--muted); }
-    .loading-state { padding: 40px 0; text-align: center; color: var(--muted); font-size: 11px; }
-
-    /* ── Toast ── */
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); font-size: 11px; padding: 10px 16px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 100; }
-    .toast.show { opacity: 1; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6;background:var(--bg);color:var(--text);min-height:100vh}
+    .hdr{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 8vw}
+    .hdr-left{display:flex;align-items:center;gap:12px}
+    .hdr-logo{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .hdr-sep{color:var(--border)}
+    .hdr-page{font-size:11px;color:var(--muted)}
+    .hdr-right{display:flex;align-items:center;gap:8px}
+    .hdr-link{font-size:11px;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:4px 10px;transition:all .15s}
+    .hdr-link:hover{color:var(--text);border-color:var(--text)}
+    .theme-toggle{background:none;border:1px solid var(--border);font-family:inherit;font-size:11px;color:var(--muted);cursor:pointer;padding:4px 10px;transition:all .15s;line-height:1}
+    .theme-toggle:hover{color:var(--text);border-color:var(--text)}
+    main{padding:0 8vw 80px}
+    .content-wrap{max-width:760px}
+    .page-head{padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px}
+    .page-head h1{font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+    .page-head p{font-size:11px;color:var(--muted)}
+    .add-section{border:1px dashed var(--border);margin-bottom:32px;transition:border-color .15s}
+    .add-section.open{border-style:solid;border-color:var(--accent)}
+    .add-toggle{background:none;border:none;font-family:inherit;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:14px 18px;transition:color .15s}
+    .add-toggle:hover{color:var(--text)}
+    .add-toggle.open{color:var(--accent)}
+    .add-toggle-icon{font-size:14px;line-height:1;width:18px;text-align:center}
+    .add-form{display:none;padding:0 18px 18px;border-top:1px solid var(--border)}
+    .add-form.open{display:block}
+    .field{margin-bottom:14px}
+    .field:first-child{margin-top:18px}
+    .field-label{font-size:11px;font-weight:700;display:block;margin-bottom:6px}
+    .field-label .req{color:var(--red)}
+    .field-hint{font-size:10px;color:var(--muted);margin-top:4px}
+    .field-hint a{color:var(--accent);text-decoration:none}
+    .field-hint a:hover{text-decoration:underline}
+    .field-row{display:flex;gap:8px;margin-bottom:14px}
+    .field-row>*{flex:1}
+    input[type="text"],textarea,select{width:100%;font-family:inherit;font-size:12px;background:transparent;border:1px solid var(--border);color:var(--text);padding:10px 12px;outline:none;resize:none;transition:border-color .15s;line-height:1.6}
+    input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+    select{cursor:pointer}
+    select option{background:var(--bg);color:var(--text)}
+    .skill-preview{display:none;margin-top:8px;border:1px solid var(--accent);background:var(--accent-bg)}
+    .skill-preview.show{display:block}
+    .skill-preview-head{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+    .skill-type-badge{font-size:9px;padding:2px 6px;border:1px solid var(--border);color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0}
+    .skill-preview-body{padding:10px 12px;font-size:11px;line-height:1.7;color:var(--text);white-space:pre-wrap;max-height:160px;overflow-y:auto}
+    .btn{font-family:inherit;font-size:12px;cursor:pointer;border:1px solid;padding:10px 16px;transition:opacity .15s;display:inline-block}
+    .btn-dark{background:var(--text);color:var(--bg);border-color:var(--text)}
+    .btn-dark:hover{opacity:.75}
+    .btn-ghost{background:transparent;color:var(--muted);border-color:var(--border)}
+    .btn-ghost:hover{color:var(--text);border-color:var(--text)}
+    .btn-danger{background:transparent;color:var(--red);border-color:var(--red-bd)}
+    .btn-danger:hover{background:var(--red-bg)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .form-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+    .sec-divider{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .sec-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+    .sec-count{font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:1px 7px;border:1px solid var(--accent)}
+    .template-group{margin-bottom:32px}
+    .template-card{border:1px solid var(--border);border-top:none;transition:border-color .15s}
+    .template-card:first-child{border-top:1px solid var(--border)}
+    .template-card:hover{border-color:var(--text)}
+    .template-row{padding:14px 16px;display:flex;align-items:flex-start;gap:12px;cursor:pointer}
+    .template-badge{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border:1px solid;flex-shrink:0;margin-top:2px;line-height:1.4}
+    .template-badge.has-type{color:var(--green);border-color:var(--green-bd);background:var(--green-bg)}
+    .template-badge.no-type{color:var(--muted);border-color:var(--border)}
+    .template-main{flex:1;min-width:0}
+    .template-name{font-size:13px;font-weight:500}
+    .template-meta{font-size:10px;color:var(--muted);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+    .used-badge{color:var(--accent)}
+    .skill-badge-inline{color:var(--green)}
+    .template-preview{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .chevron{font-size:10px;color:var(--muted);flex-shrink:0;transition:transform .15s;margin-top:3px}
+    .template-card.open .chevron{transform:rotate(180deg)}
+    .template-detail{display:none;border-top:1px solid var(--border);padding:18px 16px;background:var(--bg);filter:brightness(.97)}
+    .template-detail.open{display:block}
+    [data-theme="dark"] .template-detail{filter:brightness(1.05)}
+    .detail-meta{font-size:10px;color:var(--muted);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap}
+    .edit-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+    .empty-state{padding:40px 0;text-align:center;border:1px dashed var(--border)}
+    .empty-state p{font-size:12px;color:var(--muted)}
+    .loading-state{padding:40px 0;text-align:center;color:var(--muted);font-size:11px}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);font-size:11px;padding:10px 16px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:100}
+    .toast.show{opacity:1}
   </style>
 </head>
 <body>
@@ -198,12 +121,11 @@
 <main>
   <div class="page-head">
     <h1>brief templates.</h1>
-    <p>lưu brief mẫu theo từng loại task — chọn template khi tạo task, form tự điền, chỉ cần chỉnh nhanh.</p>
+    <p>lưu brief mẫu theo từng loại task — chọn template khi tạo task, form tự điền, chỉnh nhanh là xong.</p>
   </div>
 
   <div class="content-wrap">
 
-    <!-- Add form -->
     <div class="add-section" id="addSection">
       <button class="add-toggle" id="addToggle" onclick="toggleAddForm()">
         <span class="add-toggle-icon">+</span>
@@ -219,10 +141,10 @@
         <div class="field-row">
           <div>
             <label class="field-label">loại task</label>
-            <select id="new-task-type" onchange="onTaskTypeChange('new')">
+            <select id="new-task-type" class="task-type-select">
               <option value="">— không gán —</option>
             </select>
-            <div class="field-hint">gán để template xuất hiện khi chọn loại task trong form tạo task</div>
+            <div class="field-hint">dùng để group template — không ảnh hưởng skill</div>
           </div>
           <div>
             <label class="field-label">team</label>
@@ -236,12 +158,19 @@
           </div>
         </div>
 
-        <!-- Skill panel cho add form -->
-        <div class="skill-panel" id="skill-panel-new">
-          <!-- filled by onTaskTypeChange -->
+        <div class="field">
+          <label class="field-label">skill gắn kèm</label>
+          <select id="new-skill-id" class="skill-id-select" onchange="onSkillPick('new')">
+            <option value="">— không gán —</option>
+          </select>
+          <div class="skill-preview" id="skill-preview-new"></div>
+          <div class="field-hint">
+            skill này dùng khi AI sinh warm-up cho task loại này ·
+            <a href="skills.html">quản lý skills →</a>
+          </div>
         </div>
 
-        <div class="field" style="margin-top:14px">
+        <div class="field">
           <label class="field-label">tên task mẫu</label>
           <input type="text" id="new-summary" placeholder="vd: làm video onboarding cho [tên fresher]">
           <div class="field-hint">dùng [bracket] cho phần cần thay mỗi lần</div>
@@ -264,10 +193,7 @@
       </div>
     </div>
 
-    <!-- Template list -->
-    <div id="templateList">
-      <div class="loading-state">⏳ đang tải template...</div>
-    </div>
+    <div id="templateList"><div class="loading-state">⏳ đang tải...</div></div>
 
   </div>
 </main>
@@ -279,54 +205,88 @@ const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
 const THEME_KEY  = 'tba_theme'
 
 let templates = []
-let taskTypes = []   // skills where target_type = task_type
-let skillCache = {}  // task_type_id → skill object
+let allSkills = []
+let taskTypes = []
+let skillById = {}
 
-// ─── Theme ───────────────────────────────────────────────────
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme)
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t)
   const btn = document.getElementById('themeToggle')
-  if (btn) btn.textContent = theme === 'dark' ? 'light' : 'dark'
+  if (btn) btn.textContent = t === 'dark' ? 'light' : 'dark'
 }
 function toggleTheme() {
-  const next = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark' ? 'light' : 'dark'
-  localStorage.setItem(THEME_KEY, next)
-  applyTheme(next)
+  const n = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark' ? 'light' : 'dark'
+  localStorage.setItem(THEME_KEY, n); applyTheme(n)
 }
 applyTheme(localStorage.getItem(THEME_KEY) || 'light')
 
-// ─── Init ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadTaskTypes()   // phải xong trước để skillCache sẵn sàng
-  await loadTemplates()   // renderTemplates() mới đọc được skillCache
+  await loadAllSkills()
+  await loadTemplates()
 })
 
-async function loadTaskTypes() {
+async function loadAllSkills() {
   try {
-    const res = await fetch(`${WORKER_URL}/skills?target_type=task_type`)
-    taskTypes = await res.json()
-    // Cache theo target_id
-    taskTypes.forEach(t => { skillCache[t.target_id] = t })
+    const res = await fetch(`${WORKER_URL}/skills`)
+    allSkills = await res.json()
+    allSkills.forEach(s => { skillById[s.id] = s })
+    taskTypes = allSkills.filter(s => s.target_type === 'task_type')
+    populateSkillSelects()
     populateTaskTypeSelects()
-  } catch { taskTypes = [] }
+  } catch { allSkills = []; taskTypes = [] }
+}
+
+function populateSkillSelects() {
+  document.querySelectorAll('.skill-id-select').forEach(sel => {
+    const cur = sel.value
+    while (sel.options.length > 1) sel.remove(1)
+    ;[
+      { type: 'task_type', label: 'loại task' },
+      { type: 'team',      label: 'team' },
+      { type: 'member',    label: 'member' },
+    ].forEach(({ type, label }) => {
+      const group = allSkills.filter(s => s.target_type === type)
+      if (!group.length) return
+      const og = document.createElement('optgroup')
+      og.label = label
+      group.forEach(s => {
+        const o = document.createElement('option')
+        o.value = s.id; o.textContent = s.target_name
+        og.appendChild(o)
+      })
+      sel.appendChild(og)
+    })
+    if (cur) sel.value = cur
+  })
 }
 
 function populateTaskTypeSelects() {
-  // Add class trước để querySelectorAll bắt được luôn
-  const newSel = document.getElementById('new-task-type')
-  if (newSel) newSel.classList.add('task-type-select')
-
   document.querySelectorAll('.task-type-select').forEach(sel => {
-    const current = sel.value
+    const cur = sel.value
     while (sel.options.length > 1) sel.remove(1)
     taskTypes.forEach(t => {
-      const opt = document.createElement('option')
-      opt.value = t.target_id
-      opt.textContent = t.target_name
-      sel.appendChild(opt)
+      const o = document.createElement('option')
+      o.value = t.target_id; o.textContent = t.target_name
+      sel.appendChild(o)
     })
-    if (current) sel.value = current
+    if (cur) sel.value = cur
   })
+}
+
+function onSkillPick(ctx) {
+  const sel     = document.getElementById(ctx === 'new' ? 'new-skill-id' : `edit-skill-id-${ctx}`)
+  const preview = document.getElementById(`skill-preview-${ctx}`)
+  if (!sel || !preview) return
+  const skill = skillById[sel.value]
+  if (!skill) { preview.className = 'skill-preview'; preview.innerHTML = ''; return }
+  const typeLabel = { member: 'member', team: 'team', task_type: 'loại task' }[skill.target_type] || skill.target_type
+  preview.className = 'skill-preview show'
+  preview.innerHTML = `
+    <div class="skill-preview-head">
+      <span>📌 ${esc(skill.target_name)}</span>
+      <span class="skill-type-badge">${typeLabel}</span>
+    </div>
+    <div class="skill-preview-body">${esc(skill.skill_prompt)}</div>`
 }
 
 async function loadTemplates() {
@@ -340,209 +300,91 @@ async function loadTemplates() {
   }
 }
 
-// ─── Skill panel ─────────────────────────────────────────────
-
-// context = 'new' | template_id
-async function onTaskTypeChange(context) {
-  const selId  = context === 'new' ? 'new-task-type' : `edit-task-type-${context}`
-  const panelId = context === 'new' ? 'skill-panel-new' : `skill-panel-${context}`
-  const typeId = document.getElementById(selId)?.value
-  const panel  = document.getElementById(panelId)
-  if (!panel) return
-
-  if (!typeId) {
-    panel.className = 'skill-panel'
-    panel.innerHTML = ''
-    return
-  }
-
-  panel.className = 'skill-panel open'
-  panel.innerHTML = `<div class="skill-none">⏳ đang tải skill...</div>`
-
-  // Lấy skill từ cache hoặc fetch
-  let skill = skillCache[typeId]
-  if (!skill) {
-    try {
-      const res  = await fetch(`${WORKER_URL}/skills?target_type=task_type`)
-      const data = await res.json()
-      data.forEach(s => { skillCache[s.target_id] = s })
-      skill = skillCache[typeId]
-    } catch {}
-  }
-
-  if (!skill) {
-    panel.innerHTML = `
-      <div class="skill-none">
-        <span>loại task này chưa có skill prompt</span>
-        <button class="btn-xs accent" onclick="createSkillForType('${typeId}', '${context}')">+ tạo skill</button>
-      </div>`
-    return
-  }
-
-  renderSkillPanel(panel, skill, context)
-}
-
-function renderSkillPanel(panel, skill, context) {
-  panel.className = 'skill-panel open'
-  panel.innerHTML = `
-    <div class="skill-panel-head">
-      <span class="skill-panel-label">📌 skill prompt — ${skill.target_name}</span>
-      <div class="skill-panel-actions">
-        <button class="btn-xs" id="btn-edit-skill-${context}" onclick="toggleSkillEdit('${context}', '${skill.id}')">chỉnh sửa</button>
-      </div>
-    </div>
-    <div class="skill-panel-body">
-      <div class="skill-prompt-view" id="skill-view-${context}">${esc(skill.skill_prompt)}</div>
-      <div class="skill-prompt-edit" id="skill-edit-${context}">
-        <textarea id="skill-textarea-${context}" rows="6" style="margin-bottom:8px">${esc(skill.skill_prompt)}</textarea>
-        <div style="display:flex;gap:8px">
-          <button class="btn-xs accent" onclick="saveSkillPrompt('${skill.id}', '${context}')">lưu skill</button>
-          <button class="btn-xs" onclick="cancelSkillEdit('${context}', '${esc(skill.skill_prompt)}')">huỷ</button>
-        </div>
-      </div>
-    </div>
-  `
-}
-
-function toggleSkillEdit(context, skillId) {
-  const view   = document.getElementById(`skill-view-${context}`)
-  const edit   = document.getElementById(`skill-edit-${context}`)
-  const btn    = document.getElementById(`btn-edit-skill-${context}`)
-  const isOpen = edit.classList.toggle('open')
-  if (view) view.style.display = isOpen ? 'none' : 'block'
-  if (btn)  btn.textContent    = isOpen ? 'đóng' : 'chỉnh sửa'
-}
-
-function cancelSkillEdit(context, original) {
-  const textarea = document.getElementById(`skill-textarea-${context}`)
-  if (textarea) textarea.value = original
-  toggleSkillEdit(context)
-}
-
-async function saveSkillPrompt(skillId, context) {
-  const textarea = document.getElementById(`skill-textarea-${context}`)
-  const prompt   = textarea?.value.trim()
-  if (!prompt) { showToast('⚠ skill prompt không được để trống'); return }
-
-  try {
-    const res  = await fetch(`${WORKER_URL}/skills/${skillId}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ skill_prompt: prompt, updated_at: new Date().toISOString() }),
-    })
-    const data = await res.json()
-    if (data?.length > 0) {
-      // Update cache
-      const updated = data[0]
-      skillCache[updated.target_id] = updated
-      // Update view
-      const view = document.getElementById(`skill-view-${context}`)
-      if (view) view.textContent = prompt
-      toggleSkillEdit(context)
-      showToast('✓ skill đã cập nhật')
-    } else {
-      showToast('lỗi: ' + JSON.stringify(data))
-    }
-  } catch (err) {
-    showToast('lỗi: ' + err.message)
-  }
-}
-
-async function createSkillForType(typeId, context) {
-  const typeObj = taskTypes.find(t => t.target_id === typeId)
-  const prompt  = `Mô tả đặc thù của loại task "${typeObj?.target_name || typeId}":\n- Cần làm rõ điều gì trước khi bắt đầu?\n- Junior hay hiểu sai điểm nào?\n- Output chuẩn trông như thế nào?`
-
-  try {
-    const res  = await fetch(`${WORKER_URL}/skills`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        target_type:  'task_type',
-        target_id:    typeId,
-        target_name:  typeObj?.target_name || typeId,
-        skill_prompt: prompt,
-      }),
-    })
-    const data = await res.json()
-    if (data?.length > 0) {
-      skillCache[typeId] = data[0]
-      taskTypes.push(data[0])
-      const panel = document.getElementById(context === 'new' ? 'skill-panel-new' : `skill-panel-${context}`)
-      renderSkillPanel(panel, data[0], context)
-      // Mở edit ngay để user điền
-      toggleSkillEdit(context, data[0].id)
-      showToast('✓ skill đã tạo — điền nội dung và lưu')
-    }
-  } catch (err) {
-    showToast('lỗi: ' + err.message)
-  }
-}
-
-// ─── Render templates ─────────────────────────────────────────
 function renderTemplates() {
   const listEl = document.getElementById('templateList')
   if (!templates?.length) {
-    listEl.innerHTML = `
-      <div class="empty-state">
-        <p>chưa có template nào.</p>
-        <p style="margin-top:6px">thêm template để senior tạo task nhanh hơn — không cần viết brief từ đầu mỗi lần.</p>
-      </div>`
+    listEl.innerHTML = `<div class="empty-state"><p>chưa có template nào.</p><p style="margin-top:6px">thêm template để senior tạo task nhanh hơn.</p></div>`
     return
   }
-
   const grouped = {}
   templates.forEach(t => {
     const key = t.task_type_id || '__none'
     if (!grouped[key]) grouped[key] = []
     grouped[key].push(t)
   })
-
   let html = ''
   Object.entries(grouped).forEach(([key, list]) => {
     if (key === '__none') return
-    const typeObj  = taskTypes.find(t => t.target_id === key)
-    const typeName = typeObj?.target_name || key
-    html += `
-      <div class="template-group">
-        <div class="sec-divider">${typeName}<span class="sec-count">${list.length}</span></div>
-        ${list.map(t => buildTemplateCard(t)).join('')}
-      </div>`
+    const typeObj = taskTypes.find(t => t.target_id === key)
+    html += `<div class="template-group">
+      <div class="sec-divider">${typeObj?.target_name || key}<span class="sec-count">${list.length}</span></div>
+      ${list.map(t => buildTemplateCard(t)).join('')}
+    </div>`
   })
   if (grouped['__none']?.length) {
-    html += `
-      <div class="template-group">
-        <div class="sec-divider">không gán loại task<span class="sec-count">${grouped['__none'].length}</span></div>
-        ${grouped['__none'].map(t => buildTemplateCard(t)).join('')}
-      </div>`
+    html += `<div class="template-group">
+      <div class="sec-divider">không gán loại task<span class="sec-count">${grouped['__none'].length}</span></div>
+      ${grouped['__none'].map(t => buildTemplateCard(t)).join('')}
+    </div>`
   }
   listEl.innerHTML = html
 }
 
+function buildSkillOptions(selectedId) {
+  return [
+    { type: 'task_type', label: 'loại task' },
+    { type: 'team',      label: 'team' },
+    { type: 'member',    label: 'member' },
+  ].map(({ type, label }) => {
+    const group = allSkills.filter(s => s.target_type === type)
+    if (!group.length) return ''
+    const opts = group.map(s =>
+      `<option value="${s.id}" ${s.id === selectedId ? 'selected' : ''}>${esc(s.target_name)}</option>`
+    ).join('')
+    return `<optgroup label="${label}">${opts}</optgroup>`
+  }).join('')
+}
+
 function buildTemplateCard(t) {
-  const hasType    = !!t.task_type_id
-  const typeObj    = taskTypes.find(x => x.target_id === t.task_type_id)
-  const typeName   = typeObj?.target_name || t.task_type_id || ''
-  const preview    = (t.description_tpl || t.summary_tpl || '(không có preview)').slice(0, 100)
-  const usedLabel  = t.used_count > 0 ? `dùng ${t.used_count} lần` : 'chưa dùng'
-  const skill      = skillCache[t.task_type_id]
+  const hasType     = !!t.task_type_id
+  const typeObj     = taskTypes.find(x => x.target_id === t.task_type_id)
+  const typeName    = typeObj?.target_name || t.task_type_id || ''
+  const preview     = (t.description_tpl || t.summary_tpl || '').slice(0, 100)
+  const linkedSkill = t.skill_id ? skillById[t.skill_id] : null
+  const typeLabel   = linkedSkill ? ({ member: 'member', team: 'team', task_type: 'loại task' }[linkedSkill.target_type] || linkedSkill.target_type) : ''
+
+  const skillPreviewHTML = linkedSkill
+    ? `<div class="skill-preview show" id="skill-preview-${t.id}">
+        <div class="skill-preview-head"><span>📌 ${esc(linkedSkill.target_name)}</span><span class="skill-type-badge">${typeLabel}</span></div>
+        <div class="skill-preview-body">${esc(linkedSkill.skill_prompt)}</div>
+       </div>`
+    : `<div class="skill-preview" id="skill-preview-${t.id}"></div>`
 
   return `
     <div class="template-card" id="tcard-${t.id}">
       <div class="template-row" onclick="toggleTemplateDetail('${t.id}')">
         <div class="template-badge ${hasType ? 'has-type' : 'no-type'}">${hasType ? typeName : 'chung'}</div>
         <div class="template-main">
-          <div class="template-name">${t.name}</div>
+          <div class="template-name">${esc(t.name)}</div>
           <div class="template-meta">
             ${t.category ? `<span>${t.category}</span>` : ''}
-            <span class="${t.used_count > 0 ? 'used-badge' : ''}">${usedLabel}</span>
-            ${skill ? `<span style="color:var(--green)">📌 có skill</span>` : `<span style="color:var(--muted)">📌 chưa có skill</span>`}
+            <span class="${t.used_count > 0 ? 'used-badge' : ''}">${t.used_count > 0 ? `dùng ${t.used_count} lần` : 'chưa dùng'}</span>
+            ${linkedSkill
+              ? `<span class="skill-badge-inline">📌 ${esc(linkedSkill.target_name)}</span>`
+              : `<span style="color:var(--muted)">📌 chưa có skill</span>`}
           </div>
-          <div class="template-preview">${preview}</div>
+          ${preview ? `<div class="template-preview">${esc(preview)}</div>` : ''}
         </div>
         <div class="chevron">▾</div>
       </div>
+
       <div class="template-detail" id="tdetail-${t.id}">
         <div class="detail-meta">
-          ${hasType ? `loại task: ${typeName}` : 'chưa gán loại task'}
-          ${t.category ? ` · team: ${t.category}` : ''}
+          <span>${hasType ? `loại task: ${typeName}` : 'chưa gán loại task'}</span>
+          ${t.category ? `<span>team: ${t.category}</span>` : ''}
+          ${linkedSkill
+            ? `<span style="color:var(--green)">skill: ${esc(linkedSkill.target_name)}</span>`
+            : `<span style="color:var(--muted)">chưa gán skill</span>`}
         </div>
 
         <div class="field">
@@ -553,7 +395,7 @@ function buildTemplateCard(t) {
         <div class="field-row">
           <div>
             <label class="field-label">loại task</label>
-            <select id="edit-task-type-${t.id}" class="task-type-select" onchange="onTaskTypeChange('${t.id}')">
+            <select id="edit-task-type-${t.id}" class="task-type-select">
               <option value="">— không gán —</option>
               ${taskTypes.map(x => `<option value="${x.target_id}" ${x.target_id === t.task_type_id ? 'selected' : ''}>${x.target_name}</option>`).join('')}
             </select>
@@ -562,179 +404,123 @@ function buildTemplateCard(t) {
             <label class="field-label">team</label>
             <select id="edit-category-${t.id}">
               <option value="" ${!t.category ? 'selected' : ''}>— tất cả —</option>
-              ${['BD','PM','AI','ACCOUNT'].map(c => `<option value="${c}" ${t.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+              ${['BD','PM','AI','ACCOUNT'].map(c => `<option value="${c}" ${t.category===c?'selected':''}>${c}</option>`).join('')}
             </select>
           </div>
         </div>
 
-        <!-- Skill panel cho edit card -->
-        <div class="skill-panel ${skill ? 'open' : ''}" id="skill-panel-${t.id}">
-          ${skill ? renderSkillPanelHTML(skill, t.id) : (hasType ? `<div class="skill-none"><span>chưa có skill cho loại task này</span><button class="btn-xs accent" onclick="createSkillForType('${t.task_type_id}', '${t.id}')">+ tạo skill</button></div>` : '')}
+        <div class="field">
+          <label class="field-label">skill gắn kèm</label>
+          <select id="edit-skill-id-${t.id}" class="skill-id-select" onchange="onSkillPick('${t.id}')">
+            <option value="">— không gán —</option>
+            ${buildSkillOptions(t.skill_id)}
+          </select>
+          ${skillPreviewHTML}
+          <div class="field-hint">skill này dùng khi AI sinh warm-up · <a href="skills.html">quản lý skills →</a></div>
         </div>
 
-        <div class="field" style="margin-top:14px">
+        <div class="field">
           <label class="field-label">tên task mẫu</label>
           <input type="text" id="edit-summary-${t.id}" value="${esc(t.summary_tpl || '')}">
         </div>
-
         <div class="field">
           <label class="field-label">brief mẫu</label>
           <textarea id="edit-description-${t.id}" rows="6">${esc(t.description_tpl || '')}</textarea>
         </div>
-
         <div class="field">
           <label class="field-label">output mẫu</label>
           <textarea id="edit-output-${t.id}" rows="3">${esc(t.output_tpl || '')}</textarea>
         </div>
 
         <div class="edit-actions">
-          <button class="btn btn-dark"   id="btnSave-${t.id}" onclick="saveTemplate('${t.id}')">lưu thay đổi</button>
-          <button class="btn btn-ghost"                        onclick="toggleTemplateDetail('${t.id}')">đóng</button>
-          <button class="btn btn-danger"                       onclick="deleteTemplate('${t.id}', '${escAttr(t.name)}')">xoá</button>
-        </div>
-      </div>
-    </div>`
-}
-
-// Helper: render skill panel HTML (dùng khi build card)
-function renderSkillPanelHTML(skill, context) {
-  return `
-    <div class="skill-panel-head">
-      <span class="skill-panel-label">📌 skill prompt — ${skill.target_name}</span>
-      <div class="skill-panel-actions">
-        <button class="btn-xs" id="btn-edit-skill-${context}" onclick="toggleSkillEdit('${context}', '${skill.id}')">chỉnh sửa</button>
-      </div>
-    </div>
-    <div class="skill-panel-body">
-      <div class="skill-prompt-view" id="skill-view-${context}">${esc(skill.skill_prompt)}</div>
-      <div class="skill-prompt-edit" id="skill-edit-${context}">
-        <textarea id="skill-textarea-${context}" rows="6" style="margin-bottom:8px">${esc(skill.skill_prompt)}</textarea>
-        <div style="display:flex;gap:8px">
-          <button class="btn-xs accent" onclick="saveSkillPrompt('${skill.id}', '${context}')">lưu skill</button>
-          <button class="btn-xs" onclick="cancelSkillEdit('${context}', '${escAttr(skill.skill_prompt)}')">huỷ</button>
+          <button class="btn btn-dark" id="btnSave-${t.id}" onclick="saveTemplate('${t.id}')">lưu thay đổi</button>
+          <button class="btn btn-ghost" onclick="toggleTemplateDetail('${t.id}')">đóng</button>
+          <button class="btn btn-danger" onclick="deleteTemplate('${t.id}', '${escAttr(t.name)}')">xoá</button>
         </div>
       </div>
     </div>`
 }
 
 function toggleTemplateDetail(id) {
-  document.getElementById('tdetail-' + id)?.classList.toggle('open')
-  document.getElementById('tcard-'   + id)?.classList.toggle('open')
+  document.getElementById('tdetail-'+id)?.classList.toggle('open')
+  document.getElementById('tcard-'+id)?.classList.toggle('open')
 }
 
-// ─── Add template ────────────────────────────────────────────
 function toggleAddForm() {
-  const form    = document.getElementById('addForm')
-  const section = document.getElementById('addSection')
-  const toggle  = document.getElementById('addToggle')
-  const label   = document.getElementById('addToggleLabel')
-  const icon    = toggle.querySelector('.add-toggle-icon')
-  const isOpen  = form.classList.toggle('open')
-  section.classList.toggle('open', isOpen)
-  toggle.classList.toggle('open', isOpen)
-  icon.textContent  = isOpen ? '×' : '+'
-  label.textContent = isOpen ? 'đóng' : 'thêm template mới'
-  if (!isOpen) {
-    // Reset skill panel
-    const panel = document.getElementById('skill-panel-new')
-    if (panel) { panel.className = 'skill-panel'; panel.innerHTML = '' }
-  }
+  const form=document.getElementById('addForm'), section=document.getElementById('addSection')
+  const toggle=document.getElementById('addToggle'), label=document.getElementById('addToggleLabel')
+  const icon=toggle.querySelector('.add-toggle-icon')
+  const isOpen=form.classList.toggle('open')
+  section.classList.toggle('open',isOpen); toggle.classList.toggle('open',isOpen)
+  icon.textContent=isOpen?'×':'+'; label.textContent=isOpen?'đóng':'thêm template mới'
+  if (!isOpen) { const p=document.getElementById('skill-preview-new'); if(p){p.className='skill-preview';p.innerHTML=''} }
 }
 
 async function addTemplate() {
-  const name   = document.getElementById('new-name').value.trim()
-  const typeId = document.getElementById('new-task-type').value
-  const cat    = document.getElementById('new-category').value
-  const sum    = document.getElementById('new-summary').value.trim()
-  const desc   = document.getElementById('new-description').value.trim()
-  const out    = document.getElementById('new-output').value.trim()
-
-  if (!name || !desc) { showToast('⚠ cần điền tên và brief mẫu'); return }
-
-  const btn = document.getElementById('btnAdd')
-  btn.textContent = 'đang lưu...'
-  btn.disabled    = true
-
+  const name=document.getElementById('new-name').value.trim()
+  const typeId=document.getElementById('new-task-type').value
+  const cat=document.getElementById('new-category').value
+  const skillId=document.getElementById('new-skill-id').value
+  const sum=document.getElementById('new-summary').value.trim()
+  const desc=document.getElementById('new-description').value.trim()
+  const out=document.getElementById('new-output').value.trim()
+  if (!name||!desc){showToast('⚠ cần điền tên và brief mẫu');return}
+  const btn=document.getElementById('btnAdd'); btn.textContent='đang lưu...'; btn.disabled=true
   try {
-    const res  = await fetch(`${WORKER_URL}/templates`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, task_type_id: typeId || null, category: cat || null, summary_tpl: sum || null, description_tpl: desc, output_tpl: out || null, used_count: 0 }),
+    const res=await fetch(`${WORKER_URL}/templates`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,task_type_id:typeId||null,category:cat||null,skill_id:skillId||null,summary_tpl:sum||null,description_tpl:desc,output_tpl:out||null,used_count:0})
     })
-    const data = await res.json()
-    if (data?.length > 0) {
-      templates.unshift(data[0])
-      renderTemplates()
-      toggleAddForm()
-      ;['new-name','new-summary','new-description','new-output'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
-      document.getElementById('new-task-type').value = ''
-      document.getElementById('new-category').value  = ''
+    const data=await res.json()
+    if (data?.length>0) {
+      templates.unshift(data[0]); renderTemplates(); toggleAddForm()
+      ;['new-name','new-summary','new-description','new-output'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
+      document.getElementById('new-task-type').value=''; document.getElementById('new-category').value=''; document.getElementById('new-skill-id').value=''
       showToast('✓ template đã được thêm')
-    } else { showToast('lỗi: ' + JSON.stringify(data)) }
-  } catch (err) { showToast('lỗi: ' + err.message) }
-  finally { btn.textContent = 'lưu template'; btn.disabled = false }
+    } else showToast('lỗi: '+JSON.stringify(data))
+  } catch(err){showToast('lỗi: '+err.message)} finally{btn.textContent='lưu template';btn.disabled=false}
 }
 
-// ─── Save template ───────────────────────────────────────────
 async function saveTemplate(id) {
-  const name   = document.getElementById(`edit-name-${id}`).value.trim()
-  const typeId = document.getElementById(`edit-task-type-${id}`).value
-  const cat    = document.getElementById(`edit-category-${id}`).value
-  const sum    = document.getElementById(`edit-summary-${id}`).value.trim()
-  const desc   = document.getElementById(`edit-description-${id}`).value.trim()
-  const out    = document.getElementById(`edit-output-${id}`).value.trim()
-
-  if (!name || !desc) { showToast('⚠ cần điền tên và brief mẫu'); return }
-
-  const btn = document.getElementById(`btnSave-${id}`)
-  btn.textContent = 'đang lưu...'
-  btn.disabled    = true
-
+  const name=document.getElementById(`edit-name-${id}`).value.trim()
+  const typeId=document.getElementById(`edit-task-type-${id}`).value
+  const cat=document.getElementById(`edit-category-${id}`).value
+  const skillId=document.getElementById(`edit-skill-id-${id}`).value
+  const sum=document.getElementById(`edit-summary-${id}`).value.trim()
+  const desc=document.getElementById(`edit-description-${id}`).value.trim()
+  const out=document.getElementById(`edit-output-${id}`).value.trim()
+  if (!name||!desc){showToast('⚠ cần điền tên và brief mẫu');return}
+  const btn=document.getElementById(`btnSave-${id}`); btn.textContent='đang lưu...'; btn.disabled=true
   try {
-    const res  = await fetch(`${WORKER_URL}/templates/${id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, task_type_id: typeId || null, category: cat || null, summary_tpl: sum || null, description_tpl: desc, output_tpl: out || null }),
+    const res=await fetch(`${WORKER_URL}/templates/${id}`,{
+      method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,task_type_id:typeId||null,category:cat||null,skill_id:skillId||null,summary_tpl:sum||null,description_tpl:desc,output_tpl:out||null})
     })
-    const data = await res.json()
-    if (data?.length > 0) {
-      const idx = templates.findIndex(t => t.id === id)
-      if (idx >= 0) templates[idx] = data[0]
+    const data=await res.json()
+    if (data?.length>0) {
+      const idx=templates.findIndex(t=>t.id===id); if(idx>=0)templates[idx]=data[0]
       renderTemplates()
-      setTimeout(() => {
-        document.getElementById('tdetail-' + id)?.classList.add('open')
-        document.getElementById('tcard-'   + id)?.classList.add('open')
-      }, 50)
+      setTimeout(()=>{document.getElementById('tdetail-'+id)?.classList.add('open');document.getElementById('tcard-'+id)?.classList.add('open')},50)
       showToast('✓ template đã cập nhật')
-    } else { showToast('lỗi: ' + JSON.stringify(data)) }
-  } catch (err) { showToast('lỗi: ' + err.message) }
-  finally { btn.textContent = 'lưu thay đổi'; btn.disabled = false }
+    } else showToast('lỗi: '+JSON.stringify(data))
+  } catch(err){showToast('lỗi: '+err.message)} finally{btn.textContent='lưu thay đổi';btn.disabled=false}
 }
 
-// ─── Delete template ─────────────────────────────────────────
 async function deleteTemplate(id, name) {
   if (!confirm(`xoá template "${name}"? không thể hoàn tác.`)) return
   try {
-    await fetch(`${WORKER_URL}/templates/${id}`, { method: 'DELETE' })
-    templates = templates.filter(t => t.id !== id)
-    renderTemplates()
-    showToast('✓ đã xoá template')
-  } catch (err) { showToast('lỗi: ' + err.message) }
+    await fetch(`${WORKER_URL}/templates/${id}`,{method:'DELETE'})
+    templates=templates.filter(t=>t.id!==id); renderTemplates(); showToast('✓ đã xoá template')
+  } catch(err){showToast('lỗi: '+err.message)}
 }
 
-// ─── Utils ───────────────────────────────────────────────────
-function esc(str) {
-  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-}
-function escAttr(str) {
-  return (str || '').replace(/'/g, "\\'").replace(/\n/g, ' ')
-}
+function esc(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function escAttr(str) { return (str||'').replace(/'/g,"\\'") }
 
 let toastTimer
 function showToast(msg) {
-  const el = document.getElementById('toast')
-  el.textContent = msg
-  el.classList.add('show')
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2500)
+  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show')
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),2500)
 }
 </script>
 </body>
