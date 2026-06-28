@@ -596,7 +596,11 @@ async function initLark() {
 }
 
 function updateHeaderUser(nameEl, avatarEl) {
-  if (currentUser.name)   { nameEl.textContent = currentUser.name; nameEl.classList.remove('loading') }
+  if (currentUser.name) {
+    nameEl.textContent = currentUser.name
+    nameEl.classList.remove('loading')
+    localStorage.setItem('tba_creator_name', currentUser.name)  // lưu để dùng cho created_by
+  }
   if (currentUser.avatar) { avatarEl.src = currentUser.avatar; avatarEl.style.display = 'block' }
 }
 
@@ -759,17 +763,18 @@ function toggleRiskPanel() {
 
 function buildTaskCard(task) {
   const deadlineBadge = getDeadlineBadge(task.deadline)
+  const statusClass   = task.status === 'done' ? 'done' : task.status === 'in-progress' ? 'in-progress' : ''
   const card = document.createElement('div')
-  card.className  = 'task-card'
+  card.className    = 'task-card'
   card.dataset.guid = task.guid
   card.innerHTML = `
     <div class="task-row" onclick="toggleTaskDetail('${task.guid}')">
-      <div class="task-status ${task.status === 'done' ? 'done' : task.status === 'in-progress' ? 'in-progress' : ''}"></div>
+      <div class="task-status ${statusClass}"></div>
       <div class="task-main">
         <div class="task-name">${task.summary}</div>
         <div class="task-meta">
-          <span>→ <span class="assignee-link" onclick="event.stopPropagation(); openMemberByName('${task.assignee.replace(/'/g, "\\'")}')">${task.assignee}</span></span>
-          <span>by ${task.created_by}</span>
+          <span>→ <span class="assignee-link" onclick="event.stopPropagation(); openMemberByName('${task.assignee.replace(/'/g, "\'")}')">${task.assignee}</span></span>
+          <span>by ${task.created_by || '—'}</span>
           ${deadlineBadge}
         </div>
       </div>
@@ -778,11 +783,14 @@ function buildTaskCard(task) {
     <div class="task-detail" id="detail-${task.guid}">
       <div class="detail-sec">
         <div class="detail-label">brief</div>
-        <div class="detail-text">${task.description}</div>
+        <div class="detail-text">${task.description || '(chưa có brief)'}</div>
       </div>
-      <div class="detail-sec">
-        <div class="detail-label">câu hỏi warm-up</div>
-        <div class="detail-text" style="color:var(--muted);font-size:11px">AI đã chèn câu hỏi vào description Lark task. Junior mở task trong Lark để xem.</div>
+      <div class="detail-sec" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div class="detail-label">status</div>
+          <div class="detail-text">${task.status}</div>
+        </div>
+        <button class="sync-btn" onclick="syncTaskStatus('${task.guid}', '${task.team}', this)" title="sync status từ Lark Task">↻ sync</button>
       </div>
     </div>
   `
@@ -825,7 +833,7 @@ function toggleCreateForm() {
 }
 
 function resetForm() {
-  ['f-summary', 'f-description', 'f-output', 'f-start', 'f-due', 'f-reminder', 'f-tasklist'].forEach(id => {
+  ['f-summary', 'f-description', 'f-output', 'f-start-date', 'f-start-time', 'f-due-date', 'f-due-time', 'f-reminder', 'f-tasklist'].forEach(id => {
     const el = document.getElementById(id)
     if (el) el.value = ''
   })
@@ -955,8 +963,12 @@ function buildTaskBody() {
   const summary      = document.getElementById('f-summary').value.trim()
   const descRaw      = document.getElementById('f-description').value.trim()
   const outputExpect = document.getElementById('f-output').value.trim()
-  const startVal     = document.getElementById('f-start').value
-  const dueVal       = document.getElementById('f-due').value
+  const startDate    = document.getElementById('f-start-date').value
+  const startTime    = document.getElementById('f-start-time').value
+  const startVal     = startDate ? (startTime ? `${startDate}T${startTime}` : `${startDate}T00:00`) : ''
+  const dueDate      = document.getElementById('f-due-date').value
+  const dueTime      = document.getElementById('f-due-time').value
+  const dueVal       = dueDate ? (dueTime ? `${dueDate}T${dueTime}` : `${dueDate}T23:59`) : ''
   const isAllDay     = document.getElementById('f-allday').checked
   const reminderVal  = document.getElementById('f-reminder').value
   const repeatVal    = document.getElementById('f-repeat').value
@@ -1131,7 +1143,9 @@ async function submitTask() {
           description:      body.description,
           assignee_name:    selectedAssignee.name,
           assignee_open_id: selectedAssignee.open_id,
-          created_by:       currentUser.name || '(unknown)',
+          created_by:       currentUser.name
+                              || localStorage.getItem('tba_creator_name')
+                              || '(chưa xác định)',
           deadline:         body.due ? new Date(Number(body.due.timestamp)).toISOString() : '',
         }),
       })
@@ -1157,6 +1171,30 @@ async function submitTask() {
     showResult('error', null, err.message)
   } finally {
     setSubmitState(false)
+  }
+}
+
+// ─── Sync status từ Lark Task về Base ───────────────────────────
+
+async function syncTaskStatus(guid, team, btnEl) {
+  if (btnEl) { btnEl.textContent = '⏳'; btnEl.disabled = true }
+  try {
+    const res  = await fetch(`${WORKER_URL}/sync-task-status`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ task_guid: guid, team }),
+    })
+    const data = await res.json()
+    if (data.ok) {
+      showToast(`✓ cập nhật status: ${data.new_status}`)
+      renderDashboard(currentTeam)
+    } else {
+      showToast('lỗi sync: ' + (data.error || JSON.stringify(data)))
+    }
+  } catch (err) {
+    showToast('lỗi: ' + err.message)
+  } finally {
+    if (btnEl) { btnEl.textContent = '↻'; btnEl.disabled = false }
   }
 }
 
