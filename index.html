@@ -70,14 +70,23 @@
       cursor: pointer; padding: 4px 10px; transition: all .15s; line-height: 1;
     }
     .theme-toggle:hover { color: var(--text); border-color: var(--text); }
-    .team-selector-wrap {
+    .team-picker-wrap {
       display: flex; align-items: center; gap: 6px;
-      border: 1px solid var(--border); padding: 4px 8px;
     }
-    .team-selector-wrap label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
-    .team-selector-wrap select {
+    .team-picker-label {
+      font-size: 10px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: .06em; white-space: nowrap;
+    }
+    .team-chips-header { display: flex; gap: 4px; }
+    .team-chip-btn {
       font-family: inherit; font-size: 11px; font-weight: 700;
-      background: transparent; border: none; color: var(--accent); cursor: pointer; outline: none; padding: 0;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer; padding: 3px 9px;
+      transition: all .15s; line-height: 1.4;
+    }
+    .team-chip-btn:hover { border-color: var(--text); color: var(--text); }
+    .team-chip-btn.active {
+      border-color: var(--accent); background: var(--accent-bg); color: var(--accent);
     }
 
     main { max-width: 100%; margin: 0 auto; padding: 0 8vw 80px; }
@@ -397,9 +406,9 @@
       <a href="skills.html"    class="hdr-link">skills</a>
       <a href="templates.html" class="hdr-link">templates</a>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">dark</button>
-      <div class="team-selector-wrap">
-        <label for="teamSelector">team</label>
-        <select id="teamSelector"></select>
+      <div class="team-picker-wrap">
+        <span class="team-picker-label">team</span>
+        <div class="team-chips-header" id="teamChipsHeader"></div>
       </div>
       <div class="hdr-user">
         <img class="hdr-avatar" id="userAvatar" alt="avatar">
