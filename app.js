@@ -329,13 +329,8 @@ async function loadUsageWidget() {
 }
 
 function renderUsageWidget(data) {
-  let el = document.getElementById('usageWidget')
-  if (!el) {
-    el = document.createElement('div')
-    el.id = 'usageWidget'
-    el.style.cssText = 'position:fixed;bottom:16px;right:16px;background:var(--surface);border:1px solid var(--border);padding:12px 16px;font-size:10px;z-index:999;min-width:200px;'
-    document.body.appendChild(el)
-  }
+  const el = document.getElementById('usageWidget')
+  if (!el) return
 
   const s = data.session
   const w = data.weekly
@@ -345,24 +340,13 @@ function renderUsageWidget(data) {
     return `background:${color};height:3px;width:${Math.min(pct,100)}%;transition:width 0.3s`
   }
 
+  const color = (pct) => pct >= 100 ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--muted)'
   el.innerHTML = `
-    <div style="font-weight:600;margin-bottom:8px;color:var(--muted)">// AI usage</div>
-    <div style="margin-bottom:6px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-        <span>session (5h)</span>
-        <span style="color:${s.pct>=100?'var(--red)':s.pct>=80?'var(--amber)':'var(--text)'}">$${Number(s.cost_usd).toFixed(4)} / $${s.limit_usd}</span>
-      </div>
-      <div style="background:var(--border);height:3px;width:100%"><div style="${barStyle(s.pct)}"></div></div>
-    </div>
-    <div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-        <span>weekly</span>
-        <span style="color:${w.pct>=100?'var(--red)':w.pct>=80?'var(--amber)':'var(--text)'}">$${Number(w.cost_usd).toFixed(4)} / $${w.limit_usd}</span>
-      </div>
-      <div style="background:var(--border);height:3px;width:100%"><div style="${barStyle(w.pct)}"></div></div>
-    </div>
-    ${s.blocked || w.blocked ? `<div style="color:var(--red);margin-top:8px;font-weight:600">⛔ AI tạm dừng — đã đạt giới hạn</div>` : ''}
-    ${(s.warned || w.warned) && !s.blocked && !w.blocked ? `<div style="color:var(--amber);margin-top:8px">⚠ sắp đạt giới hạn</div>` : ''}
+    <span style="color:${color(s.pct)}">session: $${Number(s.cost_usd).toFixed(4)}/$${s.limit_usd}</span>
+    <span style="color:var(--border)">|</span>
+    <span style="color:${color(w.pct)}">weekly: $${Number(w.cost_usd).toFixed(4)}/$${w.limit_usd}</span>
+    ${s.blocked||w.blocked ? '<span style="color:var(--red)">⛔ AI paused</span>' : ''}
+    ${(s.warned||w.warned)&&!s.blocked&&!w.blocked ? '<span style="color:var(--amber)">⚠</span>' : ''}
   `
 }
 
