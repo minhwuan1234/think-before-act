@@ -763,7 +763,6 @@ async function initLark() {
 
   if (typeof window.h5sdk === 'undefined' && typeof window.tt === 'undefined') {
     resolve(() => {
-      resolve(() => {
       isInLark = false
       nameEl.textContent = ''
       nameEl.classList.remove('loading')
