@@ -823,15 +823,35 @@ function fallbackUser(nameEl) {
 }
 
 function resolveUserTeam() {
-  const match = MEMBERS.find(m => m.open_id === currentUser.open_id)
-  if (match) {
-    const saved = localStorage.getItem(TEAM_STORAGE_KEY)
-    const team  = (saved && match.teams.includes(saved)) ? saved : match.teams[0]
-    currentUser.team = team
-    setTeam(team)
+  const tryResolve = () => {
+    const match = MEMBERS.find(m => m.open_id === currentUser.open_id)
+    if (match) {
+      const saved = localStorage.getItem(TEAM_STORAGE_KEY)
+      const team  = (saved && match.teams.includes(saved)) ? saved : match.teams[0]
+      currentUser.team = team
+      setTeam(team)
+    } else {
+      const saved = localStorage.getItem(TEAM_STORAGE_KEY)
+      setTeam(saved && TEAMS.includes(saved) ? saved : TEAM_FALLBACK)
+    }
+  }
+
+  if (MEMBERS.length > 0) {
+    tryResolve()
   } else {
-    const saved = localStorage.getItem(TEAM_STORAGE_KEY)
-    setTeam(saved && TEAMS.includes(saved) ? saved : TEAM_FALLBACK)
+    // MEMBERS chưa load xong, đợi loadMembers() xong rồi resolve
+    const interval = setInterval(() => {
+      if (MEMBERS.length > 0) {
+        clearInterval(interval)
+        tryResolve()
+      }
+    }, 100)
+    // Timeout sau 3s thì dùng saved team
+    setTimeout(() => {
+      clearInterval(interval)
+      const saved = localStorage.getItem(TEAM_STORAGE_KEY)
+      setTeam(saved && TEAMS.includes(saved) ? saved : TEAM_FALLBACK)
+    }, 3000)
   }
 }
 
