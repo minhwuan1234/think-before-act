@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   __initialized = true
   renderMembers()
   renderTeamSelector()
-  await Promise.all([initLark(), loadTaskTypes(), loadMembers()])
+ await Promise.all([initLark(), loadTaskTypes(), loadMembers()])
+loadUsageWidget()
 })
 
 // ─── Task types — load từ /skills?target_type=task_type ───────
@@ -307,6 +308,62 @@ function showToast(msg) {
   el.classList.add('show')
   clearTimeout(toastTimer)
   toastTimer = setTimeout(() => el.classList.remove('show'), 2500)
+}
+
+// ─── AI Usage widget ──────────────────────────────────────────
+
+async function loadUsageWidget() {
+  const sessionId = localStorage.getItem('tba_session_id') || (() => {
+    const id = 'sess_' + Date.now()
+    localStorage.setItem('tba_session_id', id)
+    return id
+  })()
+
+  try {
+    const res  = await fetch(`${WORKER_URL}/ai-usage?session_id=${encodeURIComponent(sessionId)}`)
+    const data = await res.json()
+    renderUsageWidget(data)
+  } catch(e) {
+    console.warn('[usage] load failed:', e.message)
+  }
+}
+
+function renderUsageWidget(data) {
+  let el = document.getElementById('usageWidget')
+  if (!el) {
+    el = document.createElement('div')
+    el.id = 'usageWidget'
+    el.style.cssText = 'position:fixed;bottom:16px;right:16px;background:var(--surface);border:1px solid var(--border);padding:12px 16px;font-size:10px;z-index:999;min-width:200px;'
+    document.body.appendChild(el)
+  }
+
+  const s = data.session
+  const w = data.weekly
+
+  const barStyle = (pct) => {
+    const color = pct >= 100 ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--accent)'
+    return `background:${color};height:3px;width:${Math.min(pct,100)}%;transition:width 0.3s`
+  }
+
+  el.innerHTML = `
+    <div style="font-weight:600;margin-bottom:8px;color:var(--muted)">// AI usage</div>
+    <div style="margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+        <span>session (5h)</span>
+        <span style="color:${s.pct>=100?'var(--red)':s.pct>=80?'var(--amber)':'var(--text)'}">$${Number(s.cost_usd).toFixed(4)} / $${s.limit_usd}</span>
+      </div>
+      <div style="background:var(--border);height:3px;width:100%"><div style="${barStyle(s.pct)}"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+        <span>weekly</span>
+        <span style="color:${w.pct>=100?'var(--red)':w.pct>=80?'var(--amber)':'var(--text)'}">$${Number(w.cost_usd).toFixed(4)} / $${w.limit_usd}</span>
+      </div>
+      <div style="background:var(--border);height:3px;width:100%"><div style="${barStyle(w.pct)}"></div></div>
+    </div>
+    ${s.blocked || w.blocked ? `<div style="color:var(--red);margin-top:8px;font-weight:600">⛔ AI tạm dừng — đã đạt giới hạn</div>` : ''}
+    ${(s.warned || w.warned) && !s.blocked && !w.blocked ? `<div style="color:var(--amber);margin-top:8px">⚠ sắp đạt giới hạn</div>` : ''}
+  `
 }
 
 // ─── Team selector — custom chips (native select bị Lark iframe chặn) ──
