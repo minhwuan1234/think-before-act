@@ -6,15 +6,21 @@
 const APP_ID     = 'cli_aab1ef7c8d785ed4'
 const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
 
-const MEMBERS = [
-  { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', teams: ['BD', 'PM', 'AI', 'ACCOUNT'] },
-  { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', teams: ['AI'] },
-  { name: 'Giang',      open_id: 'ou_c66bb984971506ca47c6125c250d3096', teams: ['BD', 'PM', 'ACCOUNT'] },
-  { name: 'Huyền Linh', open_id: 'ou_05980c37366dc083e5c5cb123824f28a', teams: ['BD'] },
-  { name: 'Nga Linh',   open_id: 'ou_cb8dfc4f8b0c05678d7e48833032708b', teams: ['BD'] },
-  { name: 'Minh Anh',   open_id: 'ou_5c68f826e269bad95695890a02693cc3', teams: ['ACCOUNT'] },
-  { name: 'Hân',        open_id: 'ou_f0e44708bb670f3ab55d376b7f801797', teams: ['BD'] },
-]
+let MEMBERS = []
+
+async function loadMembers() {
+  try {
+    const res = await fetch(`${WORKER_URL}/members`)
+    const data = await res.json()
+    MEMBERS = Array.isArray(data) ? data.map(m => ({
+      ...m,
+      teams: Array.isArray(m.teams) ? m.teams : [],
+    })) : []
+  } catch(e) {
+    console.warn('[loadMembers] failed:', e.message)
+    MEMBERS = []
+  }
+}
 
 const TEAMS        = ['BD', 'PM', 'AI', 'ACCOUNT']
 const TEAM_FALLBACK    = 'BD'
@@ -43,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   __initialized = true
   renderMembers()
   renderTeamSelector()
-  await Promise.all([initLark(), loadTaskTypes()])
+  await Promise.all([initLark(), loadTaskTypes(), loadMembers()])
 })
 
 // ─── Task types — load từ /skills?target_type=task_type ───────
@@ -309,27 +315,27 @@ function renderTeamSelector() {
   const wrap = document.getElementById('teamChipsHeader')
   if (!wrap) return
 
+  const saved = localStorage.getItem(TEAM_STORAGE_KEY) || TEAM_FALLBACK
+  const sel = document.createElement('select')
+  sel.id = 'teamDropdown'
+  sel.className = 'team-dropdown'
   TEAMS.forEach(t => {
-    const btn = document.createElement('button')
-    btn.className    = 'team-chip-btn'
-    btn.textContent  = t
-    btn.dataset.team = t
-    btn.onclick      = () => {
-      localStorage.setItem(TEAM_STORAGE_KEY, t)
-      setTeam(t)
-    }
-    wrap.appendChild(btn)
+    const opt = document.createElement('option')
+    opt.value = t
+    opt.textContent = t
+    if (t === saved) opt.selected = true
+    sel.appendChild(opt)
   })
-
-  // Restore saved preference
-  const saved = localStorage.getItem(TEAM_STORAGE_KEY)
-  if (saved && TEAMS.includes(saved)) highlightTeamChip(saved)
+  sel.onchange = () => {
+    localStorage.setItem(TEAM_STORAGE_KEY, sel.value)
+    setTeam(sel.value)
+  }
+  wrap.appendChild(sel)
 }
 
 function highlightTeamChip(team) {
-  document.querySelectorAll('.team-chip-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.team === team)
-  })
+  const sel = document.getElementById('teamDropdown')
+  if (sel) sel.value = team
 }
 
 // ─── Nav tabs ──────────────────────────────────────────────────
@@ -344,15 +350,99 @@ function switchView(viewName) {
 
 function renderMembersView() {
   const grid = document.getElementById('memberGrid')
-  grid.innerHTML = MEMBERS.map(m => `
-    <div class="member-card" onclick="openMemberProfile('${m.open_id}','${m.name.replace(/'/g, "\\'")}')">
-      <div class="member-card-name">${m.name}</div>
-      <div class="member-card-teams">
-        ${m.teams.map(t => `<span class="member-card-team">${t}</span>`).join('')}
+
+  // Form add member
+  const formHTML = `
+    <div class="member-add-form" style="grid-column:1/-1;background:var(--surface);border:1px solid var(--border);padding:16px;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:600;margin-bottom:12px;color:var(--muted)">// thêm thành viên mới</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <input id="new-member-name"  placeholder="tên *" style="padding:7px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:11px">
+        <input id="new-member-email" placeholder="email" style="padding:7px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:11px">
       </div>
-      <div class="member-card-id">${m.open_id.startsWith('ou_placeholder') ? '⚠ chưa có open_id thật' : m.open_id}</div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">teams:</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${TEAMS.map(t => `<label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" value="${t}" class="new-member-team"> ${t}</label>`).join('')}
+        </div>
+      </div>
+      <button onclick="addMember()" style="padding:6px 14px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:11px">+ thêm</button>
+    </div>
+  `
+
+  const cardsHTML = MEMBERS.map(m => `
+    <div class="member-card">
+      <div class="member-card-name" onclick="openMemberProfile('${m.open_id}','${m.name.replace(/'/g, "\\'")}')" style="cursor:pointer">${m.name}</div>
+      <div class="member-card-teams">
+        ${(m.teams || []).map(t => `<span class="member-card-team">${t}</span>`).join('')}
+      </div>
+      <div class="member-card-id" style="font-size:10px;color:var(--muted);margin-top:4px">
+        ${!m.open_id ? '⚠ chưa có open_id' : m.open_id}
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
+        <input
+          id="oid-${m.id}"
+          value="${m.open_id || ''}"
+          placeholder="open_id"
+          style="flex:1;padding:5px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:10px"
+        >
+        <button onclick="updateOpenId('${m.id}', '${m.name}')" style="padding:4px 8px;font-size:10px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer">lưu</button>
+      </div>
     </div>
   `).join('')
+
+  grid.innerHTML = formHTML + cardsHTML
+}
+
+async function addMember() {
+  const name  = document.getElementById('new-member-name').value.trim()
+  const email = document.getElementById('new-member-email').value.trim()
+  const teams = [...document.querySelectorAll('.new-member-team:checked')].map(el => el.value)
+
+  if (!name) { showToast('nhập tên thành viên'); return }
+
+  try {
+    const res  = await fetch(`${WORKER_URL}/members`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name, email: email || null, teams }),
+    })
+    const data = await res.json()
+    if (data?.length > 0 || data?.id) {
+      showToast('✓ đã thêm ' + name)
+      await loadMembers()
+      renderMembers()
+      renderMembersView()
+    } else {
+      showToast('lỗi: ' + JSON.stringify(data))
+    }
+  } catch(e) {
+    showToast('lỗi: ' + e.message)
+  }
+}
+
+async function updateOpenId(memberId, memberName) {
+  const input = document.getElementById('oid-' + memberId)
+  const openId = input?.value?.trim()
+  if (!openId) { showToast('nhập open_id trước'); return }
+
+  try {
+    const res  = await fetch(`${WORKER_URL}/members/${memberId}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ open_id: openId }),
+    })
+    const data = await res.json()
+    if (data?.length > 0 || data?.[0]?.id) {
+      showToast(`✓ đã update open_id cho ${memberName}`)
+      await loadMembers()
+      renderMembers()
+      renderMembersView()
+    } else {
+      showToast('lỗi: ' + JSON.stringify(data))
+    }
+  } catch(e) {
+    showToast('lỗi: ' + e.message)
+  }
 }
 
 // ─── Side panel: Member profile ───────────────────────────────
@@ -842,11 +932,12 @@ function buildTaskCard(task) {
       </div>
       ${task.status !== 'done' ? renderCurrentTaskResultBox(task) : ''}
       <div class="detail-actions">
-        ${task.status !== 'done'
-          ? `<button class="btn-done" onclick="completeTaskWithResult('${task.guid}', '${task.team}', this)">✓ hoàn thành + gửi AI memory</button>`
-          : `<button class="btn-reopen" onclick="markTaskDone('${task.guid}', '${task.team}', false, this)">↩ reopen</button>`
-        }
-      </div>
+  ${task.status !== 'done'
+    ? `<button class="btn-done" onclick="completeTaskWithResult('${task.guid}', '${task.team}', this)">✓ hoàn thành + gửi AI memory</button>
+       <button class="btn-delete" onclick="deleteTask('${task.guid}', '${task.team}', this)" style="margin-left:8px;background:transparent;border:1px solid var(--red);color:var(--red);padding:6px 12px;cursor:pointer;font-size:11px">🗑 xoá task</button>`
+    : `<button class="btn-reopen" onclick="markTaskDone('${task.guid}', '${task.team}', false, this)">↩ reopen</button>`
+  }
+    </div>
     </div>
   `
   return card
@@ -1372,6 +1463,29 @@ async function syncTaskStatus(guid, team, btnEl) {
     showToast('lỗi: ' + err.message)
   } finally {
     if (btnEl) { btnEl.textContent = '↻'; btnEl.disabled = false }
+  }
+}
+
+async function deleteTask(guid, team, btnEl) {
+  if (!confirm(`Xoá task này?\n- Lark Task: xoá hẳn\n- Lark Base: đổi thành cancelled\n\nKhông thể hoàn tác.`)) return
+  if (btnEl) { btnEl.textContent = '⏳'; btnEl.disabled = true }
+  try {
+    const res  = await fetch(`${WORKER_URL}/delete-task`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ task_guid: guid, team }),
+    })
+    const data = await res.json()
+    if (data.ok) {
+      showToast('🗑 task đã bị xoá')
+      renderDashboard(currentTeam)
+    } else {
+      showToast('lỗi xoá: ' + (data.error || JSON.stringify(data)))
+      if (btnEl) { btnEl.textContent = '🗑 xoá task'; btnEl.disabled = false }
+    }
+  } catch (err) {
+    showToast('lỗi: ' + err.message)
+    if (btnEl) { btnEl.textContent = '🗑 xoá task'; btnEl.disabled = false }
   }
 }
 
