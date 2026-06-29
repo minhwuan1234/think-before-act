@@ -395,7 +395,7 @@ function renderMembersView() {
 
   // Form add member
   const formHTML = `
-    <div class="member-add-form" style="grid-column:1/-1;background:var(--surface);border:1px solid var(--border);padding:16px;margin-bottom:8px">
+      <div class="member-add-form" style="grid-column:1/-1;background:var(--bg);border:1px solid var(--border);padding:16px;margin-bottom:16px">
       <div style="font-size:11px;font-weight:600;margin-bottom:12px;color:var(--muted)">// thêm thành viên mới</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <input id="new-member-name"  placeholder="tên *" style="padding:7px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:11px">
@@ -412,7 +412,7 @@ function renderMembersView() {
   `
 
   const cardsHTML = MEMBERS.map(m => `
-    <div class="member-card">
+    <div class="member-card" style="width:auto;min-width:180px;flex-shrink:0">
       <div class="member-card-name" onclick="openMemberProfile('${m.open_id}','${m.name.replace(/'/g, "\\'")}')" style="cursor:pointer">${m.name}</div>
       <div class="member-card-teams">
         ${(m.teams || []).map(t => `<span class="member-card-team">${t}</span>`).join('')}
