@@ -840,14 +840,13 @@ function buildTaskCard(task) {
         <div class="detail-label">brief</div>
         <div class="detail-text">${task.description || '(chưa có brief)'}</div>
       </div>
+      ${task.status !== 'done' ? renderCurrentTaskResultBox(task) : ''}
       <div class="detail-actions">
         ${task.status !== 'done'
-          ? `<button class="btn-done" onclick="markTaskDone('${task.guid}', '${task.team}', true, this)">✓ hoàn thành</button>`
+          ? `<button class="btn-done" onclick="completeTaskWithResult('${task.guid}', '${task.team}', this)">✓ hoàn thành + gửi AI memory</button>`
           : `<button class="btn-reopen" onclick="markTaskDone('${task.guid}', '${task.team}', false, this)">↩ reopen</button>`
         }
-        <button class="sync-btn" onclick="syncTaskStatus('${task.guid}', '${task.team}', this)">↻ sync status</button>
       </div>
-      ${renderCurrentTaskResultBox(task)}
     </div>
   `
   return card
@@ -868,65 +867,57 @@ function renderCurrentTaskResultBox(task) {
         placeholder="Nhập đánh giá kết quả task này. VD: done ổn, nhưng thiếu reference nên phải sửa 2 vòng; lần sau cần đưa sample trước."
         style="width:100%;font-family:inherit;font-size:11px;padding:9px;border:1px solid var(--border);background:transparent;color:var(--text);resize:vertical;line-height:1.6"
       ></textarea>
-      <button
-        class="btn btn-ghost"
-        style="font-size:11px;padding:7px 12px;margin-top:8px;width:auto"
-        onclick="submitCurrentTaskResult('${escAttr(task.guid)}', '${escAttr(task.team)}', this)"
-      >
-        gửi đánh giá vào memory
-      </button>
       <div style="font-size:10px;color:var(--muted);margin-top:6px">
-        feedback này chỉ dùng để dạy AI memory, không ghi vào lịch sử task thủ công.
+        Khi bấm “hoàn thành + gửi AI memory”, đánh giá này sẽ được lưu vào memory của member và task sẽ được đánh dấu done.
       </div>
     </div>
   `
 }
 
-async function submitCurrentTaskResult(guid, team, btnEl) {
+async function completeTaskWithResult(guid, team, btnEl) {
   const domId = feedbackDomId(guid)
   const noteEl = document.getElementById(`task-result-${domId}`)
   const resultText = noteEl?.value?.trim() || ''
 
   if (!resultText) {
-    showToast('nhập đánh giá kết quả trước đã')
+    showToast('nhập đánh giá kết quả trước khi hoàn thành')
+    noteEl?.focus()
     return
   }
 
+  const label = '✓ hoàn thành + gửi AI memory'
   if (btnEl) {
-    btnEl.textContent = 'đang gửi...'
+    btnEl.textContent = 'đang hoàn thành...'
     btnEl.disabled = true
   }
 
   try {
-    const res = await fetch(`${WORKER_URL}/task-feedback`, {
+    const res = await fetch(`${WORKER_URL}/complete-task-result`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         task_guid: guid,
         team,
-        outcome: 'senior_result',
-        feedback_note: resultText,
+        result_text: resultText,
         reviewer_name: currentUser.name || localStorage.getItem('tba_creator_name') || '',
         reviewer_open_id: currentUser.open_id || '',
-        context: { source: 'dashboard_current_task_result' },
+        context: { source: 'dashboard_complete_button' },
       }),
     })
 
     const data = await res.json()
     if (!data.ok) {
-      showToast('lỗi gửi memory: ' + (data.error || JSON.stringify(data)))
+      showToast('lỗi hoàn thành: ' + (data.error || JSON.stringify(data)))
+      if (btnEl) { btnEl.textContent = label; btnEl.disabled = false }
       return
     }
 
     if (noteEl) noteEl.value = ''
-    showToast(data.memory_updated ? '✓ đánh giá đã vào AI memory' : '✓ đánh giá đã lưu')
+    showToast(data.memory_updated ? '✓ task done + AI memory đã update' : '✓ task done + đã lưu đánh giá')
+    renderDashboard(currentTeam)
   } catch (err) {
     showToast('lỗi: ' + err.message)
-  } finally {
-    if (btnEl) {
-      btnEl.textContent = 'gửi đánh giá vào memory'
-      btnEl.disabled = false
-    }
+    if (btnEl) { btnEl.textContent = label; btnEl.disabled = false }
   }
 }
 
