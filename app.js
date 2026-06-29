@@ -1,6 +1,6 @@
 // ============================================================
 //  THINK-BEFORE-ACT — app.js
-//  Phase 7: Brief Template Library + Task Type Skills
+//  Phase 9: Brief Template Library + AI Member Memory context
 // ============================================================
 
 const APP_ID     = 'cli_aab1ef7c8d785ed4'
@@ -28,6 +28,8 @@ let selectedAssignee  = null
 let selectedFollowers = []
 let selectedTaskType  = null   // { id, name }
 let selectedSkillId   = null   // UUID từ brief_templates.skill_id
+let selectedTemplateId = null   // template được apply vào task hiện tại
+let selectedTemplateName = null
 let taskTypes         = []     // loaded from /skills?target_type=task_type
 let currentTeam       = ''
 let isSubmitting      = false
@@ -79,12 +81,24 @@ function escAttr(str) {
   return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')
 }
 
+
+function escHtml(str) {
+  return (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 async function selectTaskType(typeId, typeName, chipEl) {
   const chips = document.querySelectorAll('#taskTypeList .member-chip')
 
   // Toggle off nếu click lại chip đã chọn
   if (selectedTaskType?.id === typeId) {
     selectedTaskType = null
+    selectedTemplateId = null
+    selectedTemplateName = null
     chips.forEach(c => c.classList.remove('selected'))
     hideTemplatePicker()
     return
@@ -156,10 +170,15 @@ function applyTemplate(tpl) {
 
   // Lưu skill_id từ template → dùng khi check-brief + generate-suggestion
   selectedSkillId = tpl.skill_id || null
+  selectedTemplateId = tpl.id || null
+  selectedTemplateName = tpl.name || null
 
   // Increment used_count (fire-and-forget)
   if (tpl.id) {
-    fetch(`${WORKER_URL}/templates/${tpl.id}/use`, { method: 'PATCH' }).catch(() => {})
+    fetch(`${WORKER_URL}/templates/${tpl.id}/use`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+    }).catch(() => {})
   }
 
   // Collapse picker sau khi apply
@@ -389,6 +408,9 @@ function renderMemberProfile(name, openId, data) {
   const s     = p.summary || { total: 0, done: 0, pending: 0, overdue: 0 }
   const teamCounts = data.team_counts || {}
   const tasks      = data.tasks || []
+  const feedbackItems = data.task_feedback || []
+  const latestFeedbackByGuid = {}
+  feedbackItems.forEach(f => { if (f.task_guid && !latestFeedbackByGuid[f.task_guid]) latestFeedbackByGuid[f.task_guid] = f })
 
   const summaryHTML = `
     <div class="summary-grid">
@@ -463,6 +485,33 @@ function renderMemberProfile(name, openId, data) {
        </div>`
     : ''
 
+  const memory = data.memory || null
+  const aiSummary = memory?.ai_summary || memory?.summary?.ai_memory?.ai_summary || null
+  const aiLearnings = memory?.ai_learnings?.length ? memory.ai_learnings : (memory?.learnings || [])
+  const aiRecommendations = memory?.ai_recommendations || memory?.summary?.ai_memory?.ai_recommendations || []
+  const memoryHTML = memory
+    ? `<div class="pattern-sec">
+         <div class="pattern-title">🧠 memory tổng hợp</div>
+         <div class="pattern-list">
+           ${aiSummary?.working_style ? `<strong>Cách làm việc:</strong> ${aiSummary.working_style}<br>` : ''}
+           ${aiSummary?.risk_pattern ? `<strong>Rủi ro:</strong> ${aiSummary.risk_pattern}<br>` : ''}
+           ${aiSummary?.best_way_to_assign ? `<strong>Cách giao việc tốt:</strong> ${aiSummary.best_way_to_assign}<br>` : ''}
+           ${aiLearnings?.length ? `<br><strong>Learning:</strong><br>${aiLearnings.slice(0,4).map(l => `• ${l}`).join('<br>')}` : ''}
+           ${aiRecommendations?.length ? `<br><br><strong>Gợi ý:</strong><br>${aiRecommendations.slice(0,4).map(l => `• ${l}`).join('<br>')}` : ''}
+           ${memory.last_rebuilt_at ? `<br><br><span style="color:var(--muted)">cập nhật: ${formatDateShort(memory.last_rebuilt_at)}</span>` : ''}
+         </div>
+       </div>`
+    : ''
+
+  const feedbackSummaryHTML = feedbackItems.length > 0
+    ? `<div class="pattern-sec">
+         <div class="pattern-title">🗣️ senior feedback (${feedbackItems.length})</div>
+         <div class="pattern-list">
+           ${feedbackItems.slice(0,5).map(f => `• ${escHtml(f.task_summary || f.task_guid || 'task')} — ${escHtml(f.outcome || 'no outcome')}${f.blocker_reason ? ` / ${escHtml(f.blocker_reason)}` : ''}`).join('<br>')}
+         </div>
+       </div>`
+    : ''
+
   const sortedTasks = [...tasks].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
   const historyHTML = sortedTasks.length > 0
     ? sortedTasks.map((t, i) => {
@@ -486,6 +535,7 @@ function renderMemberProfile(name, openId, data) {
               <div class="history-detail-text">${(t.description || '(không có brief)').replace(/</g, '&lt;')}</div>
               <div class="history-detail-label">metadata</div>
               <div class="history-detail-text">team: ${t.team} • status: ${t.status} • guid: ${t.task_guid || '—'}</div>
+              ${renderTaskFeedbackBox(t, latestFeedbackByGuid[guid], name, openId)}
             </div>
           </div>`
       }).join('')
@@ -502,6 +552,8 @@ function renderMemberProfile(name, openId, data) {
     ${summaryHTML}
     ${patternHTML}
     ${teamHTML}
+    ${memoryHTML}
+    ${feedbackSummaryHTML}
     <div class="pattern-sec">
       <div class="pattern-title">📋 lịch sử task (${tasks.length})</div>
       ${historyHTML}
@@ -512,6 +564,95 @@ function renderMemberProfile(name, openId, data) {
 function toggleHistoryDetail(guid) {
   const el = document.getElementById('hist-' + guid)
   if (el) el.classList.toggle('open')
+}
+
+
+function renderTaskFeedbackBox(task, latestFeedback, memberName, openId) {
+  const guid = task.task_guid || ''
+  if (!guid || guid.startsWith('idx-')) return ''
+  const safeGuid = escAttr(guid)
+  const latest = latestFeedback
+    ? `<div style="font-size:10px;color:var(--muted);margin:6px 0 8px">feedback gần nhất: <strong>${escHtml(latest.outcome || '—')}</strong>${latest.blocker_reason ? ` / ${escHtml(latest.blocker_reason)}` : ''}${latest.created_at ? ` · ${formatDateShort(latest.created_at)}` : ''}</div>`
+    : `<div style="font-size:10px;color:var(--muted);margin:6px 0 8px">chưa có feedback senior cho task này</div>`
+
+  return `
+    <div class="history-detail-label">senior feedback → AI memory</div>
+    ${latest}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <select id="fb-outcome-${safeGuid}" style="font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text)">
+        <option value="">outcome</option>
+        <option value="done_good">done tốt</option>
+        <option value="done_need_revision">done nhưng cần sửa nhiều</option>
+        <option value="late">trễ deadline</option>
+        <option value="stuck">stuck / chưa xong</option>
+        <option value="scope_changed">scope đổi</option>
+      </select>
+      <select id="fb-reason-${safeGuid}" style="font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text)">
+        <option value="">lý do chính</option>
+        <option value="brief_unclear">brief chưa rõ</option>
+        <option value="missing_asset">thiếu asset</option>
+        <option value="missing_access">thiếu quyền truy cập</option>
+        <option value="waiting_feedback">chờ feedback</option>
+        <option value="skill_gap">member chưa biết cách làm</option>
+        <option value="workload_high">workload cao</option>
+        <option value="scope_changed">scope đổi</option>
+        <option value="other">khác</option>
+      </select>
+      <select id="fb-quality-${safeGuid}" style="font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text)">
+        <option value="">quality</option>
+        <option value="5">5 — tốt</option>
+        <option value="4">4 — ổn</option>
+        <option value="3">3 — trung bình</option>
+        <option value="2">2 — yếu</option>
+        <option value="1">1 — fail</option>
+      </select>
+      <input id="fb-revisions-${safeGuid}" type="number" min="0" placeholder="số vòng sửa" style="font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text)">
+    </div>
+    <input id="fb-support-${safeGuid}" type="text" placeholder="support cần thêm: asset / sample / access / review..." style="width:100%;font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text);margin-bottom:8px">
+    <textarea id="fb-note-${safeGuid}" rows="2" placeholder="note ngắn cho AI: vì sao task này tốt / trễ / stuck?" style="width:100%;font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text);resize:vertical;margin-bottom:8px"></textarea>
+    <button class="btn btn-ghost" style="font-size:11px;padding:6px 10px" onclick="submitTaskFeedback('${safeGuid}', '${escAttr(task.team || '')}', '${escAttr(memberName)}', '${escAttr(openId)}', this)">lưu feedback vào memory</button>
+  `
+}
+
+async function submitTaskFeedback(guid, team, memberName, openId, btnEl) {
+  const getVal = id => document.getElementById(`${id}-${guid}`)?.value?.trim() || ''
+  const payload = {
+    task_guid: guid,
+    team,
+    outcome: getVal('fb-outcome'),
+    blocker_reason: getVal('fb-reason'),
+    quality_rating: getVal('fb-quality'),
+    revision_count: getVal('fb-revisions'),
+    support_needed: getVal('fb-support'),
+    feedback_note: getVal('fb-note'),
+    reviewer_name: currentUser.name || localStorage.getItem('tba_creator_name') || '',
+    reviewer_open_id: currentUser.open_id || '',
+  }
+
+  if (!payload.outcome && !payload.blocker_reason && !payload.feedback_note) {
+    showToast('điền ít nhất outcome, lý do hoặc note')
+    return
+  }
+
+  if (btnEl) { btnEl.textContent = 'đang lưu...'; btnEl.disabled = true }
+  try {
+    const res = await fetch(`${WORKER_URL}/task-feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const data = await res.json()
+    if (!data.ok) {
+      showToast('lỗi feedback: ' + (data.error || JSON.stringify(data)))
+      return
+    }
+    showToast(data.memory_updated ? '✓ feedback đã vào memory' : '✓ feedback đã lưu')
+    openMemberProfile(openId, memberName)
+  } catch (err) {
+    showToast('lỗi: ' + err.message)
+  } finally {
+    if (btnEl) { btnEl.textContent = 'lưu feedback vào memory'; btnEl.disabled = false }
+  }
 }
 
 function openMemberByName(name) {
@@ -849,6 +990,8 @@ function resetForm() {
   selectedFollowers = []
   selectedTaskType  = null
   selectedSkillId   = null
+  selectedTemplateId = null
+  selectedTemplateName = null
 
   document.querySelectorAll('.member-chip').forEach(c => c.classList.remove('selected'))
   document.querySelectorAll('#taskTypeList .member-chip').forEach(c => c.classList.remove('selected'))
@@ -1016,6 +1159,20 @@ function validate() {
 
 // ─── Check brief ───────────────────────────────────────────────
 
+// ─── Memory event context ─────────────────────────────────────
+
+function getMemoryEventContext() {
+  return {
+    assignee_name: selectedAssignee?.name || '',
+    task_type_id: selectedTaskType?.id || null,
+    task_type_name: selectedTaskType?.name || null,
+    template_id: selectedTemplateId || null,
+    template_name: selectedTemplateName || null,
+    created_by_name: currentUser.name || localStorage.getItem('tba_creator_name') || '',
+    created_by_open_id: currentUser.open_id || '',
+  }
+}
+
 async function checkBrief() {
   const summary = document.getElementById('f-summary').value.trim()
   const desc    = document.getElementById('f-description').value.trim()
@@ -1047,6 +1204,8 @@ async function checkBrief() {
         assignee_open_id: selectedAssignee.open_id,
         assignee_team:    getAssigneeTargetTeam(),
         skill_id:         selectedSkillId || null,
+        task_summary:     summary,
+        ...getMemoryEventContext(),
       }),
     })
     const data = await res.json()
@@ -1165,6 +1324,7 @@ async function submitTask() {
           // Pass data trực tiếp — tránh Base timing issue
           task_summary:     body.summary,
           task_description: body.description,
+          ...getMemoryEventContext(),
         }),
       })
       const genData = await genRes.json()
