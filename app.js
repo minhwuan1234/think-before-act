@@ -12,10 +12,12 @@ async function loadMembers() {
   try {
     const res = await fetch(`${WORKER_URL}/members`)
     const data = await res.json()
+    console.log('[loadMembers] data:', data)
     MEMBERS = Array.isArray(data) ? data.map(m => ({
       ...m,
       teams: Array.isArray(m.teams) ? m.teams : [],
     })) : []
+    console.log('[loadMembers] MEMBERS:', MEMBERS)
   } catch(e) {
     console.warn('[loadMembers] failed:', e.message)
     MEMBERS = []
