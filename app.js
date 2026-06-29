@@ -535,7 +535,6 @@ function renderMemberProfile(name, openId, data) {
               <div class="history-detail-text">${(t.description || '(không có brief)').replace(/</g, '&lt;')}</div>
               <div class="history-detail-label">metadata</div>
               <div class="history-detail-text">team: ${t.team} • status: ${t.status} • guid: ${t.task_guid || '—'}</div>
-              ${renderTaskFeedbackBox(t, latestFeedbackByGuid[guid], name, openId)}
             </div>
           </div>`
       }).join('')
@@ -567,93 +566,7 @@ function toggleHistoryDetail(guid) {
 }
 
 
-function renderTaskFeedbackBox(task, latestFeedback, memberName, openId) {
-  const guid = task.task_guid || ''
-  if (!guid || guid.startsWith('idx-')) return ''
-  const safeGuid = escAttr(guid)
-  const latest = latestFeedback
-    ? `<div style="font-size:10px;color:var(--muted);margin:6px 0 8px">feedback gần nhất: <strong>${escHtml(latest.outcome || '—')}</strong>${latest.blocker_reason ? ` / ${escHtml(latest.blocker_reason)}` : ''}${latest.created_at ? ` · ${formatDateShort(latest.created_at)}` : ''}</div>`
-    : `<div style="font-size:10px;color:var(--muted);margin:6px 0 8px">chưa có feedback senior cho task này</div>`
-
-  return `
-    <div class="history-detail-label">senior feedback → AI memory</div>
-    ${latest}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-      <select id="fb-outcome-${safeGuid}" style="font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text)">
-        <option value="">outcome</option>
-        <option value="done_good">done tốt</option>
-        <option value="done_need_revision">done nhưng cần sửa nhiều</option>
-        <option value="late">trễ deadline</option>
-        <option value="stuck">stuck / chưa xong</option>
-        <option value="scope_changed">scope đổi</option>
-      </select>
-      <select id="fb-reason-${safeGuid}" style="font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text)">
-        <option value="">lý do chính</option>
-        <option value="brief_unclear">brief chưa rõ</option>
-        <option value="missing_asset">thiếu asset</option>
-        <option value="missing_access">thiếu quyền truy cập</option>
-        <option value="waiting_feedback">chờ feedback</option>
-        <option value="skill_gap">member chưa biết cách làm</option>
-        <option value="workload_high">workload cao</option>
-        <option value="scope_changed">scope đổi</option>
-        <option value="other">khác</option>
-      </select>
-      <select id="fb-quality-${safeGuid}" style="font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text)">
-        <option value="">quality</option>
-        <option value="5">5 — tốt</option>
-        <option value="4">4 — ổn</option>
-        <option value="3">3 — trung bình</option>
-        <option value="2">2 — yếu</option>
-        <option value="1">1 — fail</option>
-      </select>
-      <input id="fb-revisions-${safeGuid}" type="number" min="0" placeholder="số vòng sửa" style="font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text)">
-    </div>
-    <input id="fb-support-${safeGuid}" type="text" placeholder="support cần thêm: asset / sample / access / review..." style="width:100%;font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text);margin-bottom:8px">
-    <textarea id="fb-note-${safeGuid}" rows="2" placeholder="note ngắn cho AI: vì sao task này tốt / trễ / stuck?" style="width:100%;font-family:inherit;font-size:11px;padding:7px;border:1px solid var(--border);background:transparent;color:var(--text);resize:vertical;margin-bottom:8px"></textarea>
-    <button class="btn btn-ghost" style="font-size:11px;padding:6px 10px" onclick="submitTaskFeedback('${safeGuid}', '${escAttr(task.team || '')}', '${escAttr(memberName)}', '${escAttr(openId)}', this)">lưu feedback vào memory</button>
-  `
-}
-
-async function submitTaskFeedback(guid, team, memberName, openId, btnEl) {
-  const getVal = id => document.getElementById(`${id}-${guid}`)?.value?.trim() || ''
-  const payload = {
-    task_guid: guid,
-    team,
-    outcome: getVal('fb-outcome'),
-    blocker_reason: getVal('fb-reason'),
-    quality_rating: getVal('fb-quality'),
-    revision_count: getVal('fb-revisions'),
-    support_needed: getVal('fb-support'),
-    feedback_note: getVal('fb-note'),
-    reviewer_name: currentUser.name || localStorage.getItem('tba_creator_name') || '',
-    reviewer_open_id: currentUser.open_id || '',
-  }
-
-  if (!payload.outcome && !payload.blocker_reason && !payload.feedback_note) {
-    showToast('điền ít nhất outcome, lý do hoặc note')
-    return
-  }
-
-  if (btnEl) { btnEl.textContent = 'đang lưu...'; btnEl.disabled = true }
-  try {
-    const res = await fetch(`${WORKER_URL}/task-feedback`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    const data = await res.json()
-    if (!data.ok) {
-      showToast('lỗi feedback: ' + (data.error || JSON.stringify(data)))
-      return
-    }
-    showToast(data.memory_updated ? '✓ feedback đã vào memory' : '✓ feedback đã lưu')
-    openMemberProfile(openId, memberName)
-  } catch (err) {
-    showToast('lỗi: ' + err.message)
-  } finally {
-    if (btnEl) { btnEl.textContent = 'lưu feedback vào memory'; btnEl.disabled = false }
-  }
-}
+// Senior result input now lives on current dashboard task cards, not in member history.
 
 function openMemberByName(name) {
   const m = MEMBERS.find(x => x.name === name)
@@ -934,9 +847,87 @@ function buildTaskCard(task) {
         }
         <button class="sync-btn" onclick="syncTaskStatus('${task.guid}', '${task.team}', this)">↻ sync status</button>
       </div>
+      ${renderCurrentTaskResultBox(task)}
     </div>
   `
   return card
+}
+
+function feedbackDomId(guid) {
+  return String(guid || '').replace(/[^a-zA-Z0-9_-]/g, '_')
+}
+
+function renderCurrentTaskResultBox(task) {
+  const domId = feedbackDomId(task.guid)
+  return `
+    <div class="detail-sec" style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+      <div class="detail-label">đánh giá kết quả → AI memory</div>
+      <textarea
+        id="task-result-${domId}"
+        rows="3"
+        placeholder="Nhập đánh giá kết quả task này. VD: done ổn, nhưng thiếu reference nên phải sửa 2 vòng; lần sau cần đưa sample trước."
+        style="width:100%;font-family:inherit;font-size:11px;padding:9px;border:1px solid var(--border);background:transparent;color:var(--text);resize:vertical;line-height:1.6"
+      ></textarea>
+      <button
+        class="btn btn-ghost"
+        style="font-size:11px;padding:7px 12px;margin-top:8px;width:auto"
+        onclick="submitCurrentTaskResult('${escAttr(task.guid)}', '${escAttr(task.team)}', this)"
+      >
+        gửi đánh giá vào memory
+      </button>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">
+        feedback này chỉ dùng để dạy AI memory, không ghi vào lịch sử task thủ công.
+      </div>
+    </div>
+  `
+}
+
+async function submitCurrentTaskResult(guid, team, btnEl) {
+  const domId = feedbackDomId(guid)
+  const noteEl = document.getElementById(`task-result-${domId}`)
+  const resultText = noteEl?.value?.trim() || ''
+
+  if (!resultText) {
+    showToast('nhập đánh giá kết quả trước đã')
+    return
+  }
+
+  if (btnEl) {
+    btnEl.textContent = 'đang gửi...'
+    btnEl.disabled = true
+  }
+
+  try {
+    const res = await fetch(`${WORKER_URL}/task-feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task_guid: guid,
+        team,
+        outcome: 'senior_result',
+        feedback_note: resultText,
+        reviewer_name: currentUser.name || localStorage.getItem('tba_creator_name') || '',
+        reviewer_open_id: currentUser.open_id || '',
+        context: { source: 'dashboard_current_task_result' },
+      }),
+    })
+
+    const data = await res.json()
+    if (!data.ok) {
+      showToast('lỗi gửi memory: ' + (data.error || JSON.stringify(data)))
+      return
+    }
+
+    if (noteEl) noteEl.value = ''
+    showToast(data.memory_updated ? '✓ đánh giá đã vào AI memory' : '✓ đánh giá đã lưu')
+  } catch (err) {
+    showToast('lỗi: ' + err.message)
+  } finally {
+    if (btnEl) {
+      btnEl.textContent = 'gửi đánh giá vào memory'
+      btnEl.disabled = false
+    }
+  }
 }
 
 function toggleTaskDetail(guid) {
