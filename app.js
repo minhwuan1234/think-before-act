@@ -9,11 +9,11 @@ const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
 const MEMBERS = [
   { name: 'Quân',       open_id: 'ou_9ed35df790cc4a522b2c184ee5a87159', teams: ['BD', 'PM', 'AI', 'ACCOUNT'] },
   { name: 'Chi',        open_id: 'ou_90bf9de23e0771d26a58637225ea6de8', teams: ['AI'] },
-  { name: 'Giang',      open_id: 'ou_placeholder_giang',                teams: ['BD'] },
-  { name: 'Huyền Linh', open_id: 'ou_placeholder_hlinh',                teams: ['BD'] },
-  { name: 'Nga Linh',   open_id: 'ou_placeholder_nlinh',                teams: ['BD'] },
-  { name: 'Minh Anh',   open_id: 'ou_placeholder_manh',                 teams: ['ACCOUNT'] },
-  { name: 'Hân',        open_id: 'ou_placeholder_han',                  teams: ['ACCOUNT'] },
+  { name: 'Giang',      open_id: 'ou_c66bb984971506ca47c6125c250d3096', teams: ['BD', 'PM', 'ACCOUNT'] },
+  { name: 'Huyền Linh', open_id: 'ou_05980c37366dc083e5c5cb123824f28a', teams: ['BD'] },
+  { name: 'Nga Linh',   open_id: 'ou_cb8dfc4f8b0c05678d7e48833032708b', teams: ['BD'] },
+  { name: 'Minh Anh',   open_id: 'ou_5c68f826e269bad95695890a02693cc3', teams: ['ACCOUNT'] },
+  { name: 'Hân',        open_id: 'ou_f0e44708bb670f3ab55d376b7f801797', teams: ['BD'] },
 ]
 
 const TEAMS        = ['BD', 'PM', 'AI', 'ACCOUNT']
