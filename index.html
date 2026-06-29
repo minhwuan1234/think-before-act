@@ -54,11 +54,11 @@
       padding: 0 8vw;
     }
     .hdr-logo { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-    .hdr-right { display: flex; align-items: center; gap: 8px; }
+    .hdr-right { display: flex; align-items: center; gap: 16px; }
     .hdr-link {
-      font-size: 11px; color: var(--muted); text-decoration: none;
-      border: 1px solid var(--border); padding: 4px 10px; transition: all .15s;
-    }
+  font-size: 11px; color: var(--muted); text-decoration: none;
+  border: 1px solid var(--border); padding: 4px 12px; transition: all .15s;
+}
     .hdr-link:hover { color: var(--text); border-color: var(--text); }
     .hdr-user  { display: flex; align-items: center; gap: 8px; }
     .hdr-avatar { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; display: none; }
@@ -418,7 +418,7 @@
         <span class="team-picker-label">team</span>
         <div class="team-chips-header" id="teamChipsHeader"></div>
       </div>
-      <div id="usageWidget" style="display:flex;align-items:center;gap:12px;font-size:10px;color:var(--muted)"></div>
+      <div id="usageWidget" style="display:flex;align-items:center;gap:16px;font-size:10px;color:var(--muted);padding:0 8px;border-left:1px solid var(--border);border-right:1px solid var(--border)"></div>
       <div class="hdr-user">
         <img class="hdr-avatar" id="userAvatar" alt="avatar">
         <span class="hdr-name loading" id="nameDisplay">đang tải...</span>
