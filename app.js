@@ -761,8 +761,9 @@ async function initLark() {
 
   if (typeof window.h5sdk === 'undefined' && typeof window.tt === 'undefined') {
     resolve(() => {
+      resolve(() => {
       isInLark = false
-      nameEl.textContent = '(ngoài Lark)'
+      nameEl.textContent = ''
       nameEl.classList.remove('loading')
       const saved = localStorage.getItem(TEAM_STORAGE_KEY)
       setTeam(saved && TEAMS.includes(saved) ? saved : TEAM_FALLBACK)
