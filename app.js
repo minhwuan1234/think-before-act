@@ -433,7 +433,8 @@ function renderMembersView() {
     </div>
   `).join('')
 
-  grid.innerHTML = formHTML + cardsHTML
+  grid.innerHTML = cardsHTML
+  grid.insertAdjacentHTML('beforebegin', formHTML)
 }
 
 async function addMember() {
