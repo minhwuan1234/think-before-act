@@ -386,6 +386,7 @@ function renderMembersView() {
           style="flex:1;padding:5px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:10px"
         >
         <button onclick="updateOpenId('${m.id}', '${m.name}')" style="padding:4px 8px;font-size:10px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer">lưu</button>
+        <button onclick="deleteMember('${m.id}', '${m.name}')" style="padding:4px 8px;font-size:10px;border:1px solid var(--red);background:transparent;color:var(--red);cursor:pointer">xoá</button>
       </div>
     </div>
   `).join('')
@@ -439,6 +440,27 @@ async function updateOpenId(memberId, memberName) {
       renderMembersView()
     } else {
       showToast('lỗi: ' + JSON.stringify(data))
+    }
+  } catch(e) {
+    showToast('lỗi: ' + e.message)
+  }
+}
+
+async function deleteMember(memberId, memberName) {
+  if (!confirm(`Xoá thành viên "${memberName}"?\nHành động này không thể hoàn tác.`)) return
+
+  try {
+    const res  = await fetch(`${WORKER_URL}/members/${memberId}`, {
+      method: 'DELETE',
+    })
+    const data = await res.json()
+    if (data?.ok || res.status === 200) {
+      showToast(`✓ đã xoá ${memberName}`)
+      await loadMembers()
+      renderMembers()
+      renderMembersView()
+    } else {
+      showToast('lỗi xoá: ' + JSON.stringify(data))
     }
   } catch(e) {
     showToast('lỗi: ' + e.message)
