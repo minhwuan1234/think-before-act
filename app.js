@@ -20,6 +20,7 @@ async function loadMembers() {
     console.warn('[loadMembers] failed:', e.message)
     MEMBERS = []
   }
+  renderMembers()
 }
 
 const TEAMS        = ['BD', 'PM', 'AI', 'ACCOUNT']
