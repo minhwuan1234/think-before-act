@@ -329,7 +329,8 @@
     .view { display: none; }
     .view.active { display: block; }
 
-    .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .member-grid { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+    .member-card { width: auto; min-width: 180px; flex-shrink: 0; }
     .member-card { border: 1px solid var(--border); padding: 14px 16px; cursor: pointer; transition: border-color .15s; }
     .member-card:hover { border-color: var(--accent); }
     .member-card-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
