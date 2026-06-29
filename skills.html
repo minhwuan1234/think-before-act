@@ -663,5 +663,31 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2500)
 }
 </script>
+
+  <script>
+(async function initUsageWidget() {
+  const WORKER_URL = 'https://think-before-act-proxy.minhwuan889.workers.dev'
+  const sessionId = localStorage.getItem('tba_session_id') || (() => {
+    const id = 'sess_' + Date.now()
+    localStorage.setItem('tba_session_id', id)
+    return id
+  })()
+  try {
+    const res  = await fetch(`${WORKER_URL}/ai-usage?session_id=${encodeURIComponent(sessionId)}`)
+    const data = await res.json()
+    const el   = document.getElementById('usageWidget')
+    if (!el) return
+    const s = data.session, w = data.weekly
+    const color = (pct) => pct >= 100 ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--muted)'
+    el.innerHTML = `
+      <span style="color:${color(s.pct)}">session: $${Number(s.cost_usd).toFixed(4)}/$${s.limit_usd}</span>
+      <span style="color:var(--border)">|</span>
+      <span style="color:${color(w.pct)}">weekly: $${Number(w.cost_usd).toFixed(4)}/$${w.limit_usd}</span>
+      ${s.blocked||w.blocked ? '<span style="color:var(--red)">⛔</span>' : ''}
+      ${(s.warned||w.warned)&&!s.blocked&&!w.blocked ? '<span style="color:var(--amber)">⚠</span>' : ''}
+    `
+  } catch(e) { console.warn('[usage]', e.message) }
+})()
+</script>
 </body>
 </html>
