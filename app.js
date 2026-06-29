@@ -841,14 +841,12 @@ function resolveUserTeam() {
   if (MEMBERS.length > 0) {
     tryResolve()
   } else {
-    // MEMBERS chưa load xong, đợi loadMembers() xong rồi resolve
     const interval = setInterval(() => {
       if (MEMBERS.length > 0) {
         clearInterval(interval)
         tryResolve()
       }
     }, 100)
-    // Timeout sau 3s thì dùng saved team
     setTimeout(() => {
       clearInterval(interval)
       const saved = localStorage.getItem(TEAM_STORAGE_KEY)
